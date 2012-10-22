@@ -29,23 +29,9 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#ifndef _LIBVX_VX_H_
-#define _LIBVX_VX_H_ 1
+#ifndef _LIBVX_VX_EVENT_H_
+#define _LIBVX_VX_EVENT_H_ 1
 
-#include <vx/cdecl.h>
-#include <vx/def.h>
-#include <vx/context.h>
-#include <vx/backend.h>
-#include <vx/source.h>
-
-VX_C_DECL_BEGIN
-
-
-int vx_core_init();
-
-
-
-VX_C_DECL_END
 
 
 

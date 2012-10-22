@@ -29,24 +29,35 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#ifndef _LIBVX_VX_H_
-#define _LIBVX_VX_H_ 1
+#ifndef _LIBVX_VX_SOURCE_H_
+#define _LIBVX_VX_SOURCE_H_ 1
 
 #include <vx/cdecl.h>
 #include <vx/def.h>
-#include <vx/context.h>
 #include <vx/backend.h>
-#include <vx/source.h>
 
-VX_C_DECL_BEGIN
+typedef struct vx_source vx_source;
+
+enum {
+	VX_SOURCE_STATE_NULL = 0,
+	VX_SOURCE_STATE_PAUSED,
+	VX_SOURCE_STATE_RUNNING,
+	VX_SOURCE_STATE_FINISHED,
+	VX_SOURCE_STATE_STOP
+};
+
+int vx_source_ref(vx_source *s);
+
+int vx_source_unref(vx_source *s);
 
 
-int vx_core_init();
+int vx_source_open(vx_source *s,const char* settings);
 
+int vx_source_close(vx_source *s);
 
+int vx_source_set_state(vx_source *s,int newstate);
 
-VX_C_DECL_END
-
+int vx_source_get_state(vx_source *s,int* outstate);
 
 
 #endif

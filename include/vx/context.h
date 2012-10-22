@@ -34,12 +34,15 @@ either expressed or implied, of the VideoExtractor Project.
 
 #include <vx/cdecl.h>
 #include <vx/def.h>
+#include <vx/frame.h>
+#include <vx/source.h>
 
 
 VX_C_DECL_BEGIN
 
-
 typedef struct vx_context vx_context;
+
+typedef void (*vx_frame_cb_t) (vx_context* c, const vx_frame* f, void *userdata);
 
 vx_context* vx_context_create(const char* name);
 
@@ -47,6 +50,7 @@ int vx_context_ref(vx_context* c);
 
 int vx_context_unref(vx_context* c);
 
+int vx_context_set_frame_callback(vx_context* c, vx_frame_cb_t* cb, void* userdata);
 
 VX_C_DECL_END
 

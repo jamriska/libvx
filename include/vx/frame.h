@@ -29,24 +29,30 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#ifndef _LIBVX_VX_H_
-#define _LIBVX_VX_H_ 1
+#ifndef _LIBVX_VX_FRAME_H_
+#define _LIBVX_VX_FRAME_H_ 1
+
 
 #include <vx/cdecl.h>
 #include <vx/def.h>
-#include <vx/context.h>
-#include <vx/backend.h>
-#include <vx/source.h>
+
 
 VX_C_DECL_BEGIN
 
+typedef struct {
+	int width;
+	int height;
+	int stride;
 
-int vx_core_init();
+	int colorModel;
 
+	int dataType;
+	int dataSize;
+	void* data;
 
+} vx_frame;
 
 VX_C_DECL_END
-
 
 
 #endif

@@ -29,24 +29,22 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#ifndef _LIBVX_VX_H_
-#define _LIBVX_VX_H_ 1
+#ifndef _LIBVX_VX_BACKEND_H_
+#define _LIBVX_VX_BACKEND_H_ 1
 
 #include <vx/cdecl.h>
 #include <vx/def.h>
-#include <vx/context.h>
-#include <vx/backend.h>
-#include <vx/source.h>
 
-VX_C_DECL_BEGIN
+//typedef struct vx_backend vx_backend;
+//typedef struct vx_
 
+//vx_backend* vx_backend_create(const char *n);
 
-int vx_core_init();
+//int vx_backend_ref(vx_backend *c);
 
+//int vx_backend_unref(vx_backend *c);
 
-
-VX_C_DECL_END
-
+//vx_source* vx_backend_source(vx_backend *b, const char* n);
 
 
 #endif

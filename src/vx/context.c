@@ -28,16 +28,10 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the VideoExtractor Project.
 
 */
-#include "vx/context.h"
+
+#include "_context.h"
 
 #include <stdlib.h>
-
-
-struct vx_context {
-    int id;
-    int refCount;
-};
-
 
 vx_context*
 vx_context_create(const char *name) {
@@ -66,3 +60,13 @@ vx_context_unref(vx_context *c) {
     }
     return -1;
 }
+
+int
+vx_context_set_frame_callback(vx_context *c, vx_frame_cb_t *cb, void *userdata)
+{
+	c->frameCallback = cb;
+	c->frameCallbackUserData = userdata;
+
+	return 0;
+}
+
