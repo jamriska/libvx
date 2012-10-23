@@ -35,30 +35,29 @@ either expressed or implied, of the VideoExtractor Project.
 
 vx_context*
 vx_context_create(const char *name) {
-    vx_context* c = malloc(sizeof(vx_context));
-    c->id = 0;
-    c->refCount = 0;
-    return c;
+	vx_context* c = malloc(sizeof(vx_context));
+
+	VX_OBJECT(c)->id = 0;
+	VX_OBJECT(c)->refCount = 0;
+	return c;
 }
 
 int
 vx_context_ref(vx_context *c) {
-    if (c) { c->refCount++; return 0;}
-    return -1;
+	if (c) { VX_OBJECT(c)->refCount++; return 0;}
+	return -1;
 }
 
 int
 vx_context_unref(vx_context *c) {
-    if (c) {
-        c->refCount--;
-
-        if (c->refCount == 0) {
-            free(c);
-        }
-
-        return 0;
-    }
-    return -1;
+	if (c) {
+		VX_OBJECT(c)->refCount--;
+		if (VX_OBJECT(c)->refCount == 0) {
+			free(c);
+		}
+		return 0;
+	}
+	return -1;
 }
 
 int

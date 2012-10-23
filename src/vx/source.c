@@ -6,23 +6,23 @@
 vx_source *
 vx_source_create(const char *n) {
 	vx_source* s = malloc(sizeof(vx_source));
-	s->id = 0;
-	s->refCount = 0;
+	VX_OBJECT(s)->id = 0;
+	VX_OBJECT(s)->refCount = 0;
 	return s;
 }
 
 int
 vx_source_ref(vx_source *s) {
-	if (s) { s->refCount++; return 0;}
+	if (s) { VX_OBJECT(s)->refCount++; return 0;}
 	return -1;
 }
 
 int
 vx_source_unref(vx_source *s) {
 	if (s) {
-		s->refCount--;
+		VX_OBJECT(s)->refCount--;
 
-		if (s->refCount == 0) {
+		if (VX_OBJECT(s)->refCount == 0) {
 			free(s);
 		}
 

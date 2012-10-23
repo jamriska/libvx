@@ -4,7 +4,7 @@ set(srcs
 	kernel.c
 	context.c
 	source.c
-	frame.c
+#	frame.c
 	)
 
 file(GLOB internal_hdrs
