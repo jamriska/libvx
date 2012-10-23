@@ -42,4 +42,20 @@ either expressed or implied, of the VideoExtractor Project.
 
 #endif
 
+/* API */
+#define VX_C_API
+
+/* export directives */
+#if defined(_MSC_VER) || defined(__CYGWIN__) || defined(__MINGW32__) || defined( __BCPLUSPLUS__)  || defined( __MWERKS__)
+#if defined(VX_LIBRARY_STATIC)
+#define VX_API_CALL
+#elif defined(VX_BUILD_LIBRARY)
+#define VX_API_CALL VX_C_API __declspec(dllexport)
+#else
+#define VX_API_CALL VX_C_API __declspec(dllimport)
+#endif
+#else
+#define VX_API_CALL
+#endif
+
 #endif

@@ -2,13 +2,16 @@
 #include "_context.h"
 
 #include <stdlib.h>
+#include <string.h>
+
+#include <_backends/null/null_backend.h>
 
 vx_source *
 vx_source_create(const char *n) {
-	vx_source* s = malloc(sizeof(vx_source));
-	VX_OBJECT(s)->id = 0;
-	VX_OBJECT(s)->refCount = 0;
-	return s;
+	if (strcmp("null",n)) {
+		return vx_source_null_create();
+	}
+	return 0;
 }
 
 int
@@ -58,4 +61,5 @@ vx_source_get_state(vx_source *s, int* state)
 int
 vx_source_add_context(vx_source* s, vx_context* c)
 {
+	return 0;
 }
