@@ -5,23 +5,27 @@
 #include <string.h>
 
 #include <_backends/null/null_backend.h>
+#include <_backends/gst010/gst010_backend.h>
 
-vx_source *
+void *
 vx_source_create(const char *n) {
-	if (strcmp("null",n)) {
+	if (0 == strcmp("null",n)) {
 		return vx_source_null_create();
 	}
-	return 0;
+	if (0 == strcmp("gstreamer",n)) {
+		return vx_source_gstreamer_create();
+	}
+	return NULL;
 }
 
 int
-vx_source_ref(vx_source *s) {
+vx_source_ref(void *s) {
 	if (s) { VX_OBJECT(s)->refCount++; return 0;}
 	return -1;
 }
 
 int
-vx_source_unref(vx_source *s) {
+vx_source_unref(void *s) {
 	if (s) {
 		VX_OBJECT(s)->refCount--;
 
@@ -35,31 +39,31 @@ vx_source_unref(vx_source *s) {
 }
 
 int
-vx_source_open(vx_source *s, const char* n)
+vx_source_open(void *s, const char* n)
 {
-	return (s ? s->open(s,n) : -1);
+	return VX_SOURCE(s)->open(s,n);
 }
 
 int
-vx_source_close(vx_source *s)
+vx_source_close(void *s)
 {
-	return (s ? s->close(s) : -1);
+	return VX_SOURCE(s)->close(s);
 }
 
 int
-vx_source_set_state(vx_source *s, int newstate)
+vx_source_set_state(void *s, int newstate)
 {
-	return (s ? s->set_state(s,newstate) : -1);
+	return VX_SOURCE(s)->set_state(s,newstate);
 }
 
 int
-vx_source_get_state(vx_source *s, int* state)
+vx_source_get_state(void *s, int* state)
 {
-	return (s ? s->get_state(s,state) : -1);
+	return VX_SOURCE(s)->get_state(s,state);
 }
 
 int
-vx_source_add_context(vx_source* s, vx_context* c)
+vx_source_add_context(void* s, vx_context* c)
 {
 	return 0;
 }

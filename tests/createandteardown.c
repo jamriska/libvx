@@ -8,10 +8,17 @@ frameCallback(vx_context* c, const vx_frame* frame,void* userData)
 }
 
 int main(int argc, char** argv) {
-
-	vx_source* s = vx_source_create("null");
-
-    vx_context* c = vx_context_create("context");
+	
+	void * s;
+	vx_context *c;
+	
+	
+	if (argc > 1) 
+		s = vx_source_create(argv[1]);
+	else
+		s = vx_source_create("null");
+	
+	c = vx_context_create("context");
 
     vx_context_ref(c);
 

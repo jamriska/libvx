@@ -1,4 +1,6 @@
 
+find_package(GStreamer0.10)
+
 set(srcs
 	backend.c
 	kernel.c
@@ -26,14 +28,23 @@ include_directories(
 
 file(GLOB hdrs "${CMAKE_SOURCE_DIR}/include/vx/*.h")
 
-
 set(backend_srcs
 	_backends/null/null_backend.c
 	_backends/null/null_backend.h
 	_backends/v4l2/v4l2_backend.c
 	_backends/v4l2/v4l2_backend.h
 	)
-
+	
+set(backend_libs)
+	
+if(GSTREAMER_FOUND)
+	include_directories(${GSTREAMER_INCLUDE_DIRS})
+	list(APPEND backend_srcs
+		_backends/gst010/gst010_backend.c
+		_backends/gst010/gst010_backend.h
+		)
+	list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
+endif()
 
 set(VX_LIBRARY_TARGET)
 option(VX_BUILD_STANDALONE_LIBRARY off)
@@ -44,6 +55,8 @@ else()
 endif()
 
 add_library(vx ${VX_LIBRARY_TARGET} ${srcs} ${hdrs} ${internal_hdrs} ${backend_srcs} ${CMAKE_BINARY_DIR}/include/vx/config.h)
+
+target_link_libraries(vx ${backend_libs})
 
 if(VX_BUILD_STANDALONE_LIBRARY)
 	set_property(TARGET vx

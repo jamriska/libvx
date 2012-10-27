@@ -3,6 +3,6 @@
 
 #include <_source.h>
 
-extern vx_source* vx_source_null_create();
+extern void* vx_source_null_create();
 
 #endif
