@@ -7,7 +7,9 @@
 static void
 frameCallback(vx_context* c, const vx_frame* frame,void* userData)
 {
-	printf("Frame %s %d",__FUNCTION__,__LINE__);
+	printf("Frame %dx%d\n\tstride: %d\n",
+		   frame->width,frame->height,
+		   frame->stride);
 }
 
 int main(int argc, char** argv) {
@@ -26,11 +28,11 @@ int main(int argc, char** argv) {
 
 	vx_context_ref(c);
 
-	vx_context_set_frame_callback(c,frameCallback,0);
+	vx_context_set_frame_callback(c,&frameCallback,0);
 
 	vx_source_add_context(s,c);
 
-	vx_source_open(s,"0,320x240");
+	vx_source_open(s,"videotestsrc");
 
 	vx_source_set_state(s,VX_SOURCE_STATE_RUNNING);
 

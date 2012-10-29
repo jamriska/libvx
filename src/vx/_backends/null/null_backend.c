@@ -3,6 +3,7 @@
 #include "_source.h"
 
 #include <stdlib.h>
+#include <stdio.h>
 
 typedef struct vx_source_null {
 	vx_source super;
@@ -40,10 +41,10 @@ vx_source_null_create()
 {
 	vx_source_null* s = malloc(sizeof(struct vx_source_null));
 
-	VX_SOURCE(s)->open = vx_source_null_open;
-	VX_SOURCE(s)->close = vx_source_null_close;
-	VX_SOURCE(s)->set_state = vx_source_null_set_state;
-	VX_SOURCE(s)->get_state = vx_source_null_get_state;
+	VX_SOURCE_CAST(s)->open = vx_source_null_open;
+	VX_SOURCE_CAST(s)->close = vx_source_null_close;
+	VX_SOURCE_CAST(s)->set_state = vx_source_null_set_state;
+	VX_SOURCE_CAST(s)->get_state = vx_source_null_get_state;
 
 	return s;
 }

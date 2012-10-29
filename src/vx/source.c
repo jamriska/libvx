@@ -42,29 +42,30 @@ int
 vx_source_open(vx_source *s, const char* n)
 {
 
-	return VX_SOURCE(s)->open(s,n);
+	return VX_SOURCE_CAST(s)->open(s,n);
 }
 
 int
 vx_source_close(vx_source *s)
 {
-	return VX_SOURCE(s)->close(s);
+	return VX_SOURCE_CAST(s)->close(s);
 }
 
 int
 vx_source_set_state(vx_source *s, int newstate)
 {
-	return VX_SOURCE(s)->set_state(s,newstate);
+	return VX_SOURCE_CAST(s)->set_state(s,newstate);
 }
 
 int
 vx_source_get_state(vx_source *s, int* state)
 {
-	return VX_SOURCE(s)->get_state(s,state);
+	return VX_SOURCE_CAST(s)->get_state(s,state);
 }
 
 int
 vx_source_add_context(vx_source* s, vx_context* c)
 {
+	VX_SOURCE_CAST(s)->context = c;
 	return 0;
 }

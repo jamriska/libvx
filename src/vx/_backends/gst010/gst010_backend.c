@@ -35,15 +35,39 @@ bufferProbeCallback(GstPad* pad, GstBuffer* buffer, gpointer user_data) {
 	gint width,height;
 	gdouble rate;
 
+	vx_frame probe;
+
 	vx_source_gstreamer *vid = (vx_source_gstreamer*)user_data;
 
 	/* just bail out */
 	if (vid == NULL ||
-		vid->_source.context == 0 ||
-		vid->_source.context->frameCallback == 0) return TRUE;
+		vid->_source.context == 0) return TRUE;
+
+	if(vid->_source.state != VX_SOURCE_STATE_RUNNING)
+		return TRUE;
 
 
-	vid->_source.context->frameCallback(0,0,vid->_source.context->frameCallbackUserData);
+	caps = gst_pad_get_negotiated_caps(pad);
+
+
+	if (caps) {
+
+		str=gst_caps_get_structure(caps,0);
+
+		/* Get some data about the frame */
+		gst_structure_get_int(str,"width",&width);
+		gst_structure_get_int(str,"height",&height);
+		gst_structure_get_double(str,"framerate",&rate);
+
+	}
+
+	probe.width = width;
+	probe.height = height;
+	probe.dataSize = GST_BUFFER_SIZE(buffer);
+	probe.data = GST_BUFFER_DATA(buffer);
+	probe.stride = probe.dataSize/probe.height;
+
+	vid->_source.context->frameCallback(vid->_source.context,&probe,vid->_source.context->frameCallbackUserData);
 
 //	printf("%s %d\n",__FUNCTION__,__LINE__);
 
@@ -97,21 +121,45 @@ videoCapsCallback(GObject* obj, GParamSpec* pspec, gpointer data) {
 }
 
 
+void
+set_video_caps(int width, int height, GstElement* elem)
+{
+	GstCaps *caps;
+
+	caps = gst_caps_new_simple ("video/x-raw-rgb",
+		"bpp",G_TYPE_INT,24,
+		"depth",G_TYPE_INT,24,
+		"width", G_TYPE_INT, width,
+		"height", G_TYPE_INT, height,
+		NULL);
+
+	g_object_set (G_OBJECT (elem), "caps", caps, NULL);
+}
+
 static
 int vx_source_gstreamer_open(vx_source *s, const char* n)
 {
+	GstIterator* iter = 0;
 	char* env = getenv("VX_GSTREAMER");
-	char* config = 0;
+	const char* srcConfig  = 0;
+	char config[500];
 	GError* error = 0;
 	unsigned char is_live = 0;
 	int ret = 0;
 	GstPad *pad, *peerpad = 0;
 
+	const char* pipelineTemplate =
+			"%s ! identity name=libvx ! fakesink";
+
 	vx_source_gstreamer* source = (vx_source_gstreamer*)s;
 
-	if (env == 0 && config == 0) {
-		config = "videotestsrc ! identity name=\"libvx\" ! fakesink ";
+	if (env == 0 && n == 0) {
+		srcConfig = "videotestsrc";
 	}
+
+	if (n) srcConfig  = n;
+
+	snprintf(config,500,pipelineTemplate,srcConfig);
 
 	source->pipeline = gst_parse_launch (config, &error);
 
@@ -122,7 +170,9 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 
 	source->_source.state = VX_SOURCE_STATE_READY;
 
-
+	while (iter = gst_bin_iterate_sinks(GST_BIN(source->pipeline)))
+	{
+	}
 
 	/* get the video sink */
 	source->probe = gst_bin_get_by_name(GST_BIN(source->pipeline), "libvx");
@@ -131,6 +181,8 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 		g_print("Pipeline has no element named 'libvx'!\n");
 		return 0;
 	};
+
+	gst_pipeline_auto_clock(GST_PIPELINE(source->pipeline));
 
 	/* get the pad from the probe (the source pad seems to be more flexible) */
 	pad = gst_element_get_static_pad (source->probe, "sink");
@@ -148,7 +200,7 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 
 	/* wait until it's up and running or failed */
 	if (gst_element_get_state (source->pipeline, NULL, NULL, -1) == GST_STATE_CHANGE_FAILURE) {
-		g_error ("libARvideo: failed to put GStreamer into READY state!\n");
+		g_error ("libvx: failed to put GStreamer into READY state!\n");
 	} else {
 
 		is_live = (ret == GST_STATE_CHANGE_NO_PREROLL) ? 1 : 0;
@@ -176,16 +228,16 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 	/* now preroll for live sources */
 	if (is_live) {
 
-		g_print ("libARvdeo: need special prerolling for live sources\n");
+		g_print ("libvx: need special prerolling for live sources\n");
 
 		/* set playing state of the pipeline */
 		gst_element_set_state (source->pipeline, GST_STATE_PLAYING);
 
 		/* wait until it's up and running or failed */
 		if (gst_element_get_state (source->pipeline, NULL, NULL, -1) == GST_STATE_CHANGE_FAILURE) {
-			g_error ("libARvideo: failed to put GStreamer into PLAYING state!\n");
+			g_error ("libvx: failed to put GStreamer into PLAYING state!\n");
 		} else {
-			g_print ("libARvideo: GStreamer pipeline is PLAYING!\n");
+			g_print ("libvx: GStreamer pipeline is PLAYING!\n");
 		}
 
 		/* set playing state of the pipeline */
@@ -193,9 +245,9 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 
 		/* wait until it's up and running or failed */
 		if (gst_element_get_state (source->pipeline, NULL, NULL, -1) == GST_STATE_CHANGE_FAILURE) {
-			g_error ("libARvideo: failed to put GStreamer into PAUSED state!\n");
+			g_error ("libvx: failed to put GStreamer into PAUSED state!\n");
 		} else {
-			g_print ("libARvideo: GStreamer pipeline is PAUSED!\n");
+			g_print ("libvx: GStreamer pipeline is PAUSED!\n");
 		}
 	}
 
@@ -241,6 +293,7 @@ vx_source_gstreamer_set_state(vx_source *s,int state) {
 					g_print ("libvx: GStreamer pipeline is PLAYING!\n");
 				}
 			}
+			VX_SOURCE_CAST(source)->state = VX_SOURCE_STATE_RUNNING;
 			break;
 
 		case VX_SOURCE_STATE_PAUSED:
@@ -248,9 +301,14 @@ vx_source_gstreamer_set_state(vx_source *s,int state) {
 			break;
 
 		default:
+			g_print("libvx: GStreamer pipeline can not switch to this state");
 			break;
 		}
+
+	} else {
+		g_print("libvx: GStreamer pipeline not initialized");
 	}
+
 	return 0;
 }
 
@@ -278,10 +336,10 @@ vx_source_gstreamer_create()
 	s->_source.get_state = 0;
 
 
-	VX_SOURCE(s)->open = vx_source_gstreamer_open;
-	VX_SOURCE(s)->close = vx_source_gstreamer_close;
-	VX_SOURCE(s)->set_state = vx_source_gstreamer_set_state;
-	VX_SOURCE(s)->get_state = vx_source_gstreamer_get_state;
+	VX_SOURCE_CAST(s)->open = vx_source_gstreamer_open;
+	VX_SOURCE_CAST(s)->close = vx_source_gstreamer_close;
+	VX_SOURCE_CAST(s)->set_state = vx_source_gstreamer_set_state;
+	VX_SOURCE_CAST(s)->get_state = vx_source_gstreamer_get_state;
 
 
 	return s;

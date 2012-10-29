@@ -27,8 +27,8 @@ struct vx_source {
 };
 
 
-#define VX_SOURCE(ptr) \
-	((vx_source*)ptr)
+#define VX_SOURCE_CAST(ptr) \
+	((vx_source*)(ptr))
 
 
 
