@@ -40,6 +40,7 @@ either expressed or implied, of the VideoExtractor Project.
 
 enum {
 	VX_SOURCE_STATE_NULL = 0,
+	VX_SOURCE_STATE_READY,
 	VX_SOURCE_STATE_PAUSED,
 	VX_SOURCE_STATE_RUNNING,
 	VX_SOURCE_STATE_FINISHED,
@@ -47,21 +48,23 @@ enum {
 };
 
 
+typedef struct vx_source vx_source;
+
 VX_API_CALL void * vx_source_create(const char *n);
 
-VX_API_CALL int vx_source_ref(void *s);
+VX_API_CALL int vx_source_ref(vx_source *s);
 
-VX_API_CALL int vx_source_unref(void *s);
+VX_API_CALL int vx_source_unref(vx_source *s);
 
 
-VX_API_CALL int vx_source_open(void *s,const char* settings);
+VX_API_CALL int vx_source_open(vx_source *s,const char* settings);
 
-VX_API_CALL int vx_source_close(void *s);
+VX_API_CALL int vx_source_close(vx_source *s);
 
-VX_API_CALL int vx_source_set_state(void *s,int newstate);
+VX_API_CALL int vx_source_set_state(vx_source *s,int newstate);
 
-VX_API_CALL int vx_source_get_state(void *s,int* outstate);
+VX_API_CALL int vx_source_get_state(vx_source *s,int* outstate);
 
-VX_API_CALL int vx_source_add_context(void* s, vx_context* c);
+VX_API_CALL int vx_source_add_context(vx_source* s, vx_context* c);
 
 #endif

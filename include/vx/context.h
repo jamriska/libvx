@@ -48,7 +48,7 @@ VX_API_CALL int vx_context_ref(vx_context* c);
 
 VX_API_CALL int vx_context_unref(vx_context* c);
 
-VX_API_CALL int vx_context_set_frame_callback(vx_context* c, vx_frame_cb_t* cb, void* userdata);
+VX_API_CALL int vx_context_set_frame_callback(vx_context* c, vx_frame_cb_t cb, void* userdata);
 
 VX_C_DECL_END
 

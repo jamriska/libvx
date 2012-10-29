@@ -19,13 +19,13 @@ vx_source_create(const char *n) {
 }
 
 int
-vx_source_ref(void *s) {
+vx_source_ref(vx_source *s) {
 	if (s) { VX_OBJECT(s)->refCount++; return 0;}
 	return -1;
 }
 
 int
-vx_source_unref(void *s) {
+vx_source_unref(vx_source *s) {
 	if (s) {
 		VX_OBJECT(s)->refCount--;
 
@@ -39,31 +39,32 @@ vx_source_unref(void *s) {
 }
 
 int
-vx_source_open(void *s, const char* n)
+vx_source_open(vx_source *s, const char* n)
 {
+
 	return VX_SOURCE(s)->open(s,n);
 }
 
 int
-vx_source_close(void *s)
+vx_source_close(vx_source *s)
 {
 	return VX_SOURCE(s)->close(s);
 }
 
 int
-vx_source_set_state(void *s, int newstate)
+vx_source_set_state(vx_source *s, int newstate)
 {
 	return VX_SOURCE(s)->set_state(s,newstate);
 }
 
 int
-vx_source_get_state(void *s, int* state)
+vx_source_get_state(vx_source *s, int* state)
 {
 	return VX_SOURCE(s)->get_state(s,state);
 }
 
 int
-vx_source_add_context(void* s, vx_context* c)
+vx_source_add_context(vx_source* s, vx_context* c)
 {
 	return 0;
 }

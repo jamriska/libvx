@@ -1,5 +1,5 @@
-#ifndef _LIBVX_VX_NULL_BACKEND_H_
-#define _LIBVX_VX_NULL_BACKEND_H_ 1
+#ifndef _LIBVX_VX_GSTREAMER_BACKEND_H_
+#define _LIBVX_VX_GSTREAMER_BACKEND_H_ 1
 
 #include <_source.h>
 

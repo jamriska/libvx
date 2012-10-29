@@ -39,6 +39,10 @@ vx_context_create(const char *name) {
 
 	VX_OBJECT(c)->id = 0;
 	VX_OBJECT(c)->refCount = 0;
+
+	c->frameCallback = 0;
+	c->frameCallbackUserData = 0;
+
 	return c;
 }
 
@@ -61,11 +65,9 @@ vx_context_unref(vx_context *c) {
 }
 
 int
-vx_context_set_frame_callback(vx_context *c, vx_frame_cb_t *cb, void *userdata)
-{
+vx_context_set_frame_callback(vx_context *c, vx_frame_cb_t cb, void *userdata) {
 	c->frameCallback = cb;
 	c->frameCallbackUserData = userdata;
-
 	return 0;
 }
 

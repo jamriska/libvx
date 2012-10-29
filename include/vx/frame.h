@@ -48,9 +48,15 @@ typedef struct {
 
 	int dataType;
 	int dataSize;
+	int owner;
+
 	void* data;
 
 } vx_frame;
+
+
+
+
 
 VX_C_DECL_END
 

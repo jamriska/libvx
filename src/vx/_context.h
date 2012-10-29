@@ -9,7 +9,7 @@
 struct vx_context {
 	vx_object _object;
 
-	vx_frame_cb_t* frameCallback;
+	vx_frame_cb_t frameCallback;
 	void* frameCallbackUserData;
 } ;
 
