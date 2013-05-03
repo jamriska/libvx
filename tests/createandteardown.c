@@ -5,28 +5,29 @@
 #include <stdio.h>
 
 static void
-frameCallback(vx_context* c, const vx_frame* frame,void* userData)
+frameCallback(vx_sink* c, const vx_frame* frame,void* userData)
 {
-	printf("Frame %dx%d\n\tstride: %d\n",
+	printf("frame #%d %dx%d stride: %d\n",frame->frame,
 		   frame->width,frame->height,
 		   frame->stride);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv)
+{
 
-	void * s;
-	vx_context *c;
-	vx_source_description *d, *dIt;
 	int i = 0;
 
+	vx_source *source;
+	vx_sink *sink;
+	vx_source_description *d, *dIt;
 
 	if (argc > 1)
-		s = vx_source_create(argv[1]);
+		source = vx_source_create(argv[1]);
 	else
-		s = vx_source_create("null");
+		source = vx_source_create("null");
 
 
-	vx_source_enumerate(s,&d);
+	vx_source_enumerate(source,&d);
 
 	dIt = d;
 
@@ -35,24 +36,34 @@ int main(int argc, char** argv) {
 		dIt++;
 	}
 
-	c = vx_context_create("context");
+	sink = vx_sink_create("context");
 
-	vx_context_ref(c);
+	vx_sink_ref(sink);
 
-	vx_context_set_frame_callback(c,&frameCallback,0);
+	vx_sink_set_frame_callback(sink,&frameCallback,0);
 
-	vx_source_add_context(s,c);
 
-	vx_source_open(s,d[1].uuid);
+//	vx_sink_unref(sink);
 
-	vx_source_set_state(s,VX_SOURCE_STATE_RUNNING);
+	if (vx_source_open(source,d[0].uuid) == 0)
+	{
+		vx_source_add_sink(source,sink);
 
-	/* do something */
-	for (i = 0; i < 1000000000; ++i) {}
+		vx_source_set_state(source,VX_SOURCE_STATE_RUNNING);
 
-	vx_context_unref(c);
+		/* do something */
+		for (i = 0; i < 1000; ++i) {
+			vx_source_update(source);
+		}
 
-	vx_context_unref(s);
+		vx_source_set_state(source,VX_SOURCE_STATE_STOP);
+
+		vx_source_close(source);
+
+		vx_source_unref(source);
+
+	}
+
 
 	return 0;
 }

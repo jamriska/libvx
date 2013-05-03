@@ -33,9 +33,7 @@ either expressed or implied, of the VideoExtractor Project.
 #define _LIBVX_VX_H_ 1
 
 #include <vx/cdecl.h>
-#include <vx/def.h>
 #include <vx/context.h>
-#include <vx/backend.h>
 #include <vx/source.h>
 
 VX_C_DECL_BEGIN

@@ -2,11 +2,9 @@
 find_package(GStreamer0.10)
 
 set(srcs
-	backend.c
 	kernel.c
 	context.c
 	source.c
-#	frame.c
 	)
 
 file(GLOB internal_hdrs
@@ -41,7 +39,7 @@ find_path(AVFOUNDATION_INCLUDE_DIR AVFoundation/AVFoundation.h)
 
 if(AVFOUNDATION_INCLUDE_DIR)
 
-	message(STATUS "AVFoundation")
+	message(STATUS "AVFoundation: YES")
 
 	set(HAVE_AVFOUNDATION 1)
 
@@ -60,9 +58,14 @@ if(AVFOUNDATION_INCLUDE_DIR)
 	list(APPEND backend_libs ${AVFOUNDATION_LIBRARY} ${COREFOUNDATION_LIBRARY} ${FOUNDATION_LIBRARY}
 ${QUARTZCORE_LIBRARY} ${COREMEDIA_LIBRARY} ${COREMEDIA_LIBRARY})
 
+else()
+	message(STATUS "AVFoundation: NO")
 endif()
 
 if(GSTREAMER_FOUND)
+
+	message(STATUS "GStreamer: YES")
+
 	include_directories(${GSTREAMER_INCLUDE_DIRS})
 	set(HAVE_GSTREAMER 1)
 	list(APPEND backend_srcs
@@ -70,6 +73,8 @@ if(GSTREAMER_FOUND)
 		_backends/gst010/gst010_backend.h
 		)
 	list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
+else()
+	message(STATUS "GStreamer: NO")
 endif()
 
 set(VX_LIBRARY_TARGET)

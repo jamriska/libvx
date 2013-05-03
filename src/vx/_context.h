@@ -6,7 +6,7 @@
 #include "vx/frame.h"
 #include "vx/context.h"
 
-struct vx_context {
+struct vx_sink {
 	vx_object _object;
 
 	vx_frame_cb_t frameCallback;

@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <_backends/null/null_backend.h>
 
@@ -70,7 +71,6 @@ vx_source_create(const char *n) {
 	 return result;
 }
 
-
 int
 vx_source_enumerate(vx_source *s, vx_source_description **e)
 {
@@ -80,6 +80,8 @@ vx_source_enumerate(vx_source *s, vx_source_description **e)
 int
 vx_source_open(vx_source *s, const char* n)
 {
+	s->sinkCount = 0;
+	s->sink = 0;
 
 	return VX_SOURCE_CAST(s)->open(s,n);
 }
@@ -103,8 +105,41 @@ vx_source_get_state(vx_source *s, int* state)
 }
 
 int
-vx_source_add_context(vx_source* s, vx_context* c)
+vx_source_update(vx_source *s)
 {
-	VX_SOURCE_CAST(s)->context = c;
+	return VX_SOURCE_CAST(s)->update(s);
+}
+
+int
+vx_source_add_sink(vx_source* source, vx_sink* sink)
+{
+	int newSize = source->sinkCount+1;
+
+	vx_sink* moreSink = realloc(source->sink,newSize*sizeof(vx_sink));
+
+	if (moreSink)
+	{
+		moreSink[source->sinkCount] = *sink;
+
+		source->sink = moreSink;
+		source->sinkCount = newSize;
+
+		printf("%s (0x%x) %d\n",__FUNCTION__,source,source->sinkCount);
+
+		return 0;
+	}
+
+	return -1;
+}
+
+
+int _vx_send_frame(vx_source* source,const vx_frame* frame)
+{
+	int i = 0;
+	for(i = 0;i < source->sinkCount;++i)
+	{
+		source->sink[i].frameCallback(&source->sink[i], frame, source->sink[i].frameCallbackUserData);
+	}
+
 	return 0;
 }

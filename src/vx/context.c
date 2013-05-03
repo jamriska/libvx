@@ -33,9 +33,9 @@ either expressed or implied, of the VideoExtractor Project.
 
 #include <stdlib.h>
 
-vx_context*
-vx_context_create(const char *name) {
-	vx_context* c = malloc(sizeof(vx_context));
+vx_sink*
+vx_sink_create(const char *name) {
+	vx_sink* c = malloc(sizeof(vx_sink));
 
 	VX_OBJECT(c)->id = 0;
 	VX_OBJECT(c)->refCount = 0;
@@ -47,13 +47,13 @@ vx_context_create(const char *name) {
 }
 
 int
-vx_context_ref(vx_context *c) {
+vx_sink_ref(vx_sink *c) {
 	if (c) { VX_OBJECT(c)->refCount++; return 0;}
 	return -1;
 }
 
 int
-vx_context_unref(vx_context *c) {
+vx_sink_unref(vx_sink *c) {
 	if (c) {
 		VX_OBJECT(c)->refCount--;
 		if (VX_OBJECT(c)->refCount == 0) {
@@ -65,7 +65,7 @@ vx_context_unref(vx_context *c) {
 }
 
 int
-vx_context_set_frame_callback(vx_context *c, vx_frame_cb_t cb, void *userdata) {
+vx_sink_set_frame_callback(vx_sink *c, vx_frame_cb_t cb, void *userdata) {
 	c->frameCallback = cb;
 	c->frameCallbackUserData = userdata;
 	return 0;

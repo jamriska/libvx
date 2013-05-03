@@ -1,6 +1,7 @@
 /*
 
-Copyright (c) 2006-2012 Hartmut Seichter
+Copyright (c) 2006-2013 Hartmut Seichter
+
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,26 +30,25 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#ifndef _LIBVX_VX_CONTEXT_H_
-#define _LIBVX_VX_CONTEXT_H_ 1
+#ifndef _LIBVX_VX_SINK_H_
+#define _LIBVX_VX_SINK_H_ 1
 
 #include <vx/cdecl.h>
-#include <vx/def.h>
 #include <vx/frame.h>
 
 VX_C_DECL_BEGIN
 
-typedef struct vx_context vx_context;
+typedef struct vx_sink vx_sink;
 
-typedef void (*vx_frame_cb_t) (vx_context* c, const vx_frame* f, void *userdata);
+typedef void (*vx_frame_cb_t) (vx_sink* c, const vx_frame* f, void *userdata);
 
-VX_API_CALL vx_context* vx_context_create(const char* name);
+VX_API_CALL vx_sink* vx_sink_create(const char* name);
 
-VX_API_CALL int vx_context_ref(vx_context* c);
+VX_API_CALL int vx_sink_ref(vx_sink* c);
 
-VX_API_CALL int vx_context_unref(vx_context* c);
+VX_API_CALL int vx_sink_unref(vx_sink* c);
 
-VX_API_CALL int vx_context_set_frame_callback(vx_context* c, vx_frame_cb_t cb, void* userdata);
+VX_API_CALL int vx_sink_set_frame_callback(vx_sink* c, vx_frame_cb_t cb, void* userdata);
 
 VX_C_DECL_END
 

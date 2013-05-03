@@ -1,95 +1,171 @@
 #include "avfoundation_backend.h"
 
 #include "_source.h"
+#include "vx/frame.h"
 
 #import <Foundation/Foundation.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreMedia/CoreMedia.h>
 #import <AVFoundation/AVFoundation.h>
 
+/* Helpers */
+#define VX_AVFOUNDATION_CAST(ptr) \
+	((vx_source_avfoundation*)(ptr))
 
-struct AVSessionControler;
+@interface VXCaptureDelegate : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
+{
+	vx_source* source;
+	vx_frame frame;
+
+	AVCaptureSession		*session;
+	AVCaptureDeviceInput	*input;
+	AVCaptureDevice			*device;
+}
+
+	@property (readwrite, retain) AVCaptureSession		*session;
+	@property (readwrite, retain) AVCaptureDeviceInput	*input;
+	@property (readwrite, retain) AVCaptureDevice		*device;
+	@property (readwrite)	vx_source					*source;
+
+
+- (void) setSource: (vx_source*) aSource;
+- (void) start;
+- (void) stop;
+
+
+@end
+
+@implementation VXCaptureDelegate;
+
+	@synthesize session, input, device, source;
+
+- (id) init: (vx_source*) aSource
+{
+	[super init];
+	self.source = aSource;
+	self.session = nil;
+	return self;
+}
+
+- (void) dealloc
+{
+	[super dealloc];
+}
+
+- (void) start
+{
+	[self.session startRunning];
+}
+
+- (void) stop
+{
+	[self.session stopRunning];
+}
+
+
+- (BOOL) isRunning
+{
+	return [self.session isRunning];
+}
+
+- (void)captureOutput: (AVCaptureOutput *)captureOutput didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer fromConnection:(AVCaptureConnection *)connection
+{
+	if (self.source == 0) return;
+
+	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
+
+	CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
+	CVPixelBufferLockBaseAddress(imageBuffer,0);
+
+
+	frame.frame++;
+	frame.data = CVPixelBufferGetBaseAddress(imageBuffer);
+	frame.stride = CVPixelBufferGetBytesPerRow(imageBuffer);
+	frame.width = CVPixelBufferGetWidth(imageBuffer);
+	frame.height = CVPixelBufferGetHeight(imageBuffer);
+	frame.colorModel = VX_E_COLOR_BGRA;
+	frame.dataSize = CVPixelBufferGetDataSize(imageBuffer);
+
+	_vx_send_frame(source,&frame);
+
+	CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+
+	[pool drain];
+}
+
+
+- (BOOL) open: (NSString*) configuration
+{
+	NSError *error;
+
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+	if ([configuration length] == 0) {
+		device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+	} else {
+		device = [AVCaptureDevice deviceWithUniqueID:configuration];
+	}
+
+	if (![device lockForConfiguration:&error]) {
+
+		NSLog(@"Error: %@", [error localizedDescription]);
+
+		[pool drain];
+		return NO;
+	}
+
+	self.input = [AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+	if (!self.input)
+	{
+		NSLog(@"Error: %@", [error localizedDescription]);
+		return NO;
+	}
+
+	self.session = [[AVCaptureSession alloc] init];
+
+	AVCaptureVideoDataOutput *captureOutput = [[AVCaptureVideoDataOutput alloc] init];
+	[captureOutput setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
+
+	NSDictionary *settings = [NSDictionary dictionaryWithObject:
+		 [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]
+		  forKey:(NSString *)kCVPixelBufferPixelFormatTypeKey ];
+
+	[session beginConfiguration];
+
+	[captureOutput setVideoSettings:settings];
+	[session setSessionPreset:AVCaptureSessionPreset352x288];
+
+	[session addInput:input];
+	[session addOutput:captureOutput];
+
+	[session commitConfiguration];
+
+	[device unlockForConfiguration];
+
+	[pool drain];
+
+	return YES;
+}
+
+
+@end
+
+///
 
 typedef struct vx_source_avfoundation {
 	vx_source super;
 
-	AVCaptureSession *session;
-	AVCaptureDeviceInput *input;
-	AVCaptureDevice *device;
-
-	struct AVSessionControler* controler;
+	VXCaptureDelegate		*delegate;
 
 } vx_source_avfoundation;
 
-#define VX_AVFOUNDATION_CAST(ptr) \
-	((vx_source_avfoundation*)(ptr))
-
-#include <stdlib.h>
-#include <stdio.h>
-
-
-@interface AVSessionControler : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
-{
-}
-
-
-@end
-
-
-@implementation AVSessionControler;
-
-//  @synthesize session, camera, videoSize;
-
-- (id) init
-{
-	[super init];
-//	videoSize = CGSizeMake(-1.f, -1.f);
-	return self;
-}
-
-  - (void)captureOutput:
-  (AVCaptureOutput *)captureOutput
-  didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
-		 fromConnection:(AVCaptureConnection *)connection
-  {
-
-
-	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
-
-	printf("FRame");
-
-	//	  if (parent == 0) return;
-
-
-//	  CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-//	  CVPixelBufferLockBaseAddress(imageBuffer,0);
-
-//	  uint8_t *baseAddress = (uint8_t *)CVPixelBufferGetBaseAddress(imageBuffer);
-//	  size_t bytesPerRow = CVPixelBufferGetBytesPerRow(imageBuffer);
-//	  size_t width = CVPixelBufferGetWidth(imageBuffer);
-//	  size_t height = CVPixelBufferGetHeight(imageBuffer);
-
-//	  IplImage local;
-//	  cvInitImageHeader(&local, cvSize(width,height), IPL_DEPTH_8U, 4);
-//	  cvSetData(&local, baseAddress, bytesPerRow);
-
-//	  cvCvtColor(&local, parent->get_image(sstt_capture::IMG_BGR), CV_BGRA2BGR);
-
-//	  parent->submit();
-
-//	  CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
-
-	  [pool drain];
-  }
-@end
-
-///
 
 int vx_source_avfoundation_enumerate(vx_source* s,vx_source_description** e)
 {
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
 	//AVMediaTypeVideo
 	NSArray* devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
 	if ([devices count] > 0)
@@ -120,84 +196,80 @@ int vx_source_avfoundation_enumerate(vx_source* s,vx_source_description** e)
 
 int vx_source_avfoundation_open(vx_source* s, const char* n)
 {
-	NSError *error;
+	int retCode = -1;
 
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	printf("%s %d\n",__FUNCTION__,__LINE__);
+	VXCaptureDelegate* delegate = [[VXCaptureDelegate alloc] init:s];
+	VX_AVFOUNDATION_CAST(s)->delegate = delegate;
 
-	AVCaptureDevice *device;
+	NSString* uuid = (n) ?  [NSString stringWithUTF8String:n] : @"";
 
-	if (n == 0) {
-		device = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+	if ([delegate open:uuid]) {
+		retCode = 0;
 	} else {
-		NSString* uuid = [NSString stringWithUTF8String:n];
-		device = [AVCaptureDevice deviceWithUniqueID:uuid];
+		[delegate release];
 	}
 
-	VX_AVFOUNDATION_CAST(s)->device = device;
+	[pool release];
+	return retCode;
+}
 
-	VX_AVFOUNDATION_CAST(s)->input =
-		[AVCaptureDeviceInput deviceInputWithDevice:device error:&error];
+int vx_source_avfoundation_update(vx_source* s)
+{
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	if (!VX_AVFOUNDATION_CAST(s)->input)
-	{
-		NSLog(@"Error: %@", error);
-		return -1;
+	int needRunLoop = 1;
+
+	if (needRunLoop) {
+		NSDate *loopUntil = [NSDate dateWithTimeIntervalSinceNow:0.005];
+		[[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
+			beforeDate:loopUntil];
+	} else {
+		[[NSRunLoop currentRunLoop] runUntilDate:nil];
 	}
 
+	[pool release];
 
-	AVCaptureSession* session;
-	session = [[AVCaptureSession alloc] init];
-
-	[session beginConfiguration];
-
-	AVCaptureVideoDataOutput *captureOutput = [[AVCaptureVideoDataOutput alloc] init];
-
-	AVSessionControler* ctrl = [[AVSessionControler alloc] init];
-
-	[captureOutput setSampleBufferDelegate:ctrl queue:dispatch_get_main_queue()];
-
-
-	NSDictionary *settings =
-	[NSDictionary dictionaryWithObject:
-	 [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]
-								forKey:(NSString *)kCVPixelBufferPixelFormatTypeKey
-	 ];
-
-
-	[captureOutput setVideoSettings:settings];
-
-	[session addInput:VX_AVFOUNDATION_CAST(s)->input];
-	[session addOutput:captureOutput];
-
-
-	[session setSessionPreset:AVCaptureSessionPreset352x288];
-	printf("%s %d opened '%s' 0x%x\n",__FUNCTION__,__LINE__,n,(long)device);
-
-	[session commitConfiguration];
-
-	[session startRunning];
-
-
-	[pool drain];
 	return 0;
 }
 
 int vx_source_avfoundation_close(vx_source* s)
 {
-	printf("%s %d\n",__FUNCTION__,__LINE__);
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+	[VX_AVFOUNDATION_CAST(s)->delegate release];
+
+	[pool release];
+
 	return 0;
 }
 
 int vx_source_avfoundation_set_state(vx_source* s,int state)
 {
-	printf("%s %d\n",__FUNCTION__,__LINE__);
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
+	switch (state) {
+	case VX_SOURCE_STATE_RUNNING:
+	[VX_AVFOUNDATION_CAST(s)->delegate start];
+	break;
+	case VX_SOURCE_STATE_STOP:
+	[VX_AVFOUNDATION_CAST(s)->delegate stop];
+	break;
+	}
+
+	[pool drain];
 	return 0;
 }
 
 int vx_source_avfoundation_get_state(vx_source* s,int* state)
 {
+	if (VX_AVFOUNDATION_CAST(s)->delegate) {
+		if ([VX_AVFOUNDATION_CAST(s)->delegate isRunning]) {
+			*state = VX_SOURCE_STATE_RUNNING;
+		}
+	}
+
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;
 }
@@ -212,6 +284,7 @@ vx_source_avfoundation_create()
 	VX_SOURCE_CAST(s)->close = vx_source_avfoundation_close;
 	VX_SOURCE_CAST(s)->set_state = vx_source_avfoundation_set_state;
 	VX_SOURCE_CAST(s)->get_state = vx_source_avfoundation_get_state;
+	VX_SOURCE_CAST(s)->update = vx_source_avfoundation_update;
 
 	return s;
 }

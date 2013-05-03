@@ -32,17 +32,31 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_VX_FRAME_H_
 #define _LIBVX_VX_FRAME_H_ 1
 
-
 #include <vx/cdecl.h>
-#include <vx/def.h>
-
 
 VX_C_DECL_BEGIN
 
-typedef struct {
-	int width;
-	int height;
-	int stride;
+enum vx_colormodel {
+	VX_E_COLOR_NONE		= 0,
+	VX_E_COLOR_GRAY8,
+	VX_E_COLOR_RGB24,
+	VX_E_COLOR_BGR24,
+	VX_E_COLOR_ARGB,
+	VX_E_COLOR_RGBA,
+	VX_E_COLOR_ABGR,
+	VX_E_COLOR_BGRA,
+	VX_E_COLOR_YU12
+};
+
+enum vx_datatype {
+	VX_E_DATATYPE_NONE		= 0,
+	VX_E_DATATYPE_UCHAR
+};
+
+typedef struct vx_frame {
+	unsigned int width;
+	unsigned int height;
+	unsigned int stride;
 
 	int colorModel;
 
@@ -52,11 +66,10 @@ typedef struct {
 
 	void* data;
 
+	unsigned long frame;
+	unsigned long tick;
+
 } vx_frame;
-
-
-
-
 
 VX_C_DECL_END
 
