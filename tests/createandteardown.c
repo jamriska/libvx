@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
 
 	void * s;
 	vx_context *c;
+	vx_source_description *d, *dIt;
 	int i = 0;
 
 
@@ -23,6 +24,16 @@ int main(int argc, char** argv) {
 		s = vx_source_create(argv[1]);
 	else
 		s = vx_source_create("null");
+
+
+	vx_source_enumerate(s,&d);
+
+	dIt = d;
+
+	while (dIt && dIt->name) {
+		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
+		dIt++;
+	}
 
 	c = vx_context_create("context");
 
@@ -32,7 +43,7 @@ int main(int argc, char** argv) {
 
 	vx_source_add_context(s,c);
 
-	vx_source_open(s,"videotestsrc");
+	vx_source_open(s,d[1].uuid);
 
 	vx_source_set_state(s,VX_SOURCE_STATE_RUNNING);
 

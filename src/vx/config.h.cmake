@@ -66,5 +66,8 @@
 /* Define to 1 if you have the ANSI C header files. */
 #cmakedefine STDC_HEADERS
 
+/* Backends */
+#cmakedefine HAVE_GSTREAMER
+#cmakedefine HAVE_AVFOUNDATION
 
 #endif

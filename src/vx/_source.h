@@ -5,7 +5,7 @@
 #include "_object.h"
 #include "_context.h"
 
-
+typedef int (*vx_source_enumerate_cb_t)(vx_source * s,vx_source_description** e);
 typedef int (*vx_source_open_cb_t)(vx_source * s,const char* n);
 typedef int (*vx_source_close_cb_t)(vx_source * s);
 typedef int (*vx_source_set_state_cb_t)(vx_source * s,int newstate);
@@ -17,6 +17,7 @@ struct vx_source {
 
 	int state;
 
+	vx_source_enumerate_cb_t enumerate;
 	vx_source_open_cb_t open;
 	vx_source_close_cb_t close;
 	vx_source_get_state_cb_t get_state;

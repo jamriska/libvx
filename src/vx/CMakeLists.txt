@@ -34,11 +34,37 @@ set(backend_srcs
 	_backends/v4l2/v4l2_backend.c
 	_backends/v4l2/v4l2_backend.h
 	)
-	
+
 set(backend_libs)
-	
+
+find_path(AVFOUNDATION_INCLUDE_DIR AVFoundation/AVFoundation.h)
+
+if(AVFOUNDATION_INCLUDE_DIR)
+
+	message(STATUS "AVFoundation")
+
+	set(HAVE_AVFOUNDATION 1)
+
+	list(APPEND backend_srcs
+		_backends/avfoundation/avfoundation_backend.m
+		_backends/avfoundation/avfoundation_backend.h
+		)
+
+	find_library(AVFOUNDATION_LIBRARY AVFoundation)
+	find_library(QUARTZCORE_LIBRARY QuartzCore)
+	find_library(COREMEDIA_LIBRARY CoreMedia)
+	find_library(COREVIDEO_LIBRARY CoreVideo)
+	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+	find_library(FOUNDATION_LIBRARY Foundation)
+
+	list(APPEND backend_libs ${AVFOUNDATION_LIBRARY} ${COREFOUNDATION_LIBRARY} ${FOUNDATION_LIBRARY}
+${QUARTZCORE_LIBRARY} ${COREMEDIA_LIBRARY} ${COREMEDIA_LIBRARY})
+
+endif()
+
 if(GSTREAMER_FOUND)
 	include_directories(${GSTREAMER_INCLUDE_DIRS})
+	set(HAVE_GSTREAMER 1)
 	list(APPEND backend_srcs
 		_backends/gst010/gst010_backend.c
 		_backends/gst010/gst010_backend.h
@@ -53,6 +79,13 @@ if(VX_BUILD_STANDALONE_LIBRARY)
 else()
 	set(VX_LIBRARY_TARGET STATIC)
 endif()
+
+
+
+configure_file(
+	${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
+	${CMAKE_BINARY_DIR}/include/vx/config.h
+	)
 
 add_library(vx ${VX_LIBRARY_TARGET} ${srcs} ${hdrs} ${internal_hdrs} ${backend_srcs} ${CMAKE_BINARY_DIR}/include/vx/config.h)
 

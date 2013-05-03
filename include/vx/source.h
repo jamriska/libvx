@@ -48,6 +48,12 @@ enum {
 };
 
 
+typedef struct vx_source_description {
+	char* name;
+	char* uuid;
+} vx_source_description;
+
+
 typedef struct vx_source vx_source;
 
 VX_API_CALL void * vx_source_create(const char *n);
@@ -56,6 +62,8 @@ VX_API_CALL int vx_source_ref(vx_source *s);
 
 VX_API_CALL int vx_source_unref(vx_source *s);
 
+
+VX_API_CALL int vx_source_enumerate(vx_source *s,vx_source_description** e);
 
 VX_API_CALL int vx_source_open(vx_source *s,const char* settings);
 

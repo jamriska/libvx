@@ -35,10 +35,7 @@ set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for headers")
 include(CheckIncludeFiles)
 include(CheckIncludeFile)
 
-configure_file(
-	src/vx/config.h.cmake
-	${CMAKE_BINARY_DIR}/include/vx/config.h
-	)
+
 
 add_subdirectory(src)
 add_subdirectory(tests)

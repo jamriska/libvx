@@ -34,8 +34,6 @@ int vx_source_null_get_state(vx_source* s,int* state)
 	return 0;
 }
 
-
-
 void*
 vx_source_null_create()
 {
