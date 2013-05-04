@@ -44,12 +44,27 @@ vx_source_unref(vx_source *s) {
 }
 
 
+const char* vx_source_default()
+{
+	static char _null[] = "null";
+	static char _gstreamer[] = "gstreamer";
+	static char _avfoundation[] = "avfoundation";
+
+#if defined(HAVE_GSTREAMER)
+	return _gstreamer;
+#elif defined(HAVE_AVFOUNDATION)
+	return _avfoundation;
+#endif
+	return _null;
+}
 
 
 void *
 vx_source_create(const char *n) {
 
 	vx_source* result = 0;
+
+	if (n == 0) return vx_source_create(vx_source_default());
 
 	if (0 == strcmp("null",n)) {
 		result = vx_source_null_create();
@@ -123,8 +138,6 @@ vx_source_add_sink(vx_source* source, vx_sink* sink)
 
 		source->sink = moreSink;
 		source->sinkCount = newSize;
-
-		printf("%s (0x%x) %d\n",__FUNCTION__,source,source->sinkCount);
 
 		return 0;
 	}

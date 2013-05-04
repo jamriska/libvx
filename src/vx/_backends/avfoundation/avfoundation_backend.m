@@ -162,10 +162,7 @@ typedef struct vx_source_avfoundation {
 
 int vx_source_avfoundation_enumerate(vx_source* s,vx_source_description** e)
 {
-	printf("%s %d\n",__FUNCTION__,__LINE__);
-
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
 	//AVMediaTypeVideo
 	NSArray* devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
 	if ([devices count] > 0)

@@ -7,7 +7,7 @@
 static void
 frameCallback(vx_sink* c, const vx_frame* frame,void* userData)
 {
-	printf("frame #%d %dx%d stride: %d\n",frame->frame,
+	printf("frame #%ld %dx%d stride: %d\n",frame->frame,
 		   frame->width,frame->height,
 		   frame->stride);
 }
@@ -24,7 +24,7 @@ int main(int argc, char** argv)
 	if (argc > 1)
 		source = vx_source_create(argv[1]);
 	else
-		source = vx_source_create("null");
+		source = vx_source_create(0);
 
 
 	vx_source_enumerate(source,&d);

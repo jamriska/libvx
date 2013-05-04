@@ -55,6 +55,15 @@ typedef struct vx_source_description {
 
 typedef struct vx_source vx_source;
 
+
+VX_API_CALL const char * vx_source_default();
+
+/**
+ * Allocates a video source
+ *
+ * @param n backed to be used
+ * @return
+ */
 VX_API_CALL void * vx_source_create(const char *n);
 
 VX_API_CALL int vx_source_ref(vx_source *s);
