@@ -74,6 +74,8 @@ static int xioctl(int fh, int request, void *arg)
 
 int vx_source_v4l2_open(vx_source* s, const char* n)
 {
+    printf("%s %s\n",__FUNCTION__,n);
+
     /* open the video device */
     VX_V4L2_CAST(s)->_fd = v4l2_open(s, O_RDWR | O_NONBLOCK, 0);
 
@@ -174,7 +176,6 @@ int vx_source_v4l2_open(vx_source* s, const char* n)
        VX_V4L2_CAST(s)->_buffer.index = i;
        xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_QBUF, &VX_V4L2_CAST(s)->_buffer);
    }
-
 
     printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;

@@ -106,6 +106,7 @@ vx_source_create(const char *n) {
 	 return result;
 }
 
+
 int
 vx_source_enumerate(vx_source *s, vx_source_description **e)
 {

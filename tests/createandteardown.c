@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	else
 		source = vx_source_create(0);
 
-//	vx_source_enumerate(source,&d);
+    vx_source_enumerate(source,&d);
 
 //	dIt = d;
 
