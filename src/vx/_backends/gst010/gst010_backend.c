@@ -169,7 +169,7 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 			return 0;
 	};
 
-	source->_source.state = VX_SOURCE_STATE_READY;
+	source->source.state = VX_SOURCE_STATE_READY;
 
 	while (iter = gst_bin_iterate_sinks(GST_BIN(source->pipeline)))
 	{
@@ -252,7 +252,7 @@ int vx_source_gstreamer_open(vx_source *s, const char* n)
 		}
 	}
 
-	source->_source.state = VX_SOURCE_STATE_PAUSED;
+	source->source.state = VX_SOURCE_STATE_PAUSED;
 
 	return 0;
 }
@@ -263,7 +263,7 @@ vx_source_gstreamer_close(vx_source *s)
 	vx_source_gstreamer* source = (vx_source_gstreamer*)s;
 	gst_object_unref (GST_OBJECT (source->pipeline));
 
-	source->_source.state = VX_SOURCE_STATE_NULL;
+	source->source.state = VX_SOURCE_STATE_NULL;
 
 	return 0;
 }
@@ -277,7 +277,7 @@ vx_source_gstreamer_set_state(vx_source *s,int state) {
 
 	GstStateChangeReturn ret;
 
-	if (source->_source.state > VX_SOURCE_STATE_NULL) {
+	if (source->source.state > VX_SOURCE_STATE_NULL) {
 
 		switch(state) {
 		case VX_SOURCE_STATE_RUNNING:
