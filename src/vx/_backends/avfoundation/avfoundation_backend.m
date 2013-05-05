@@ -55,6 +55,8 @@
 
 - (void) start
 {
+
+	frame.frame = 0;
 	[self.session startRunning];
 }
 

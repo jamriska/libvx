@@ -7,9 +7,9 @@
 static void
 frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 {
-	printf("frame #%ld %dx%d stride: %d (device: 0x%x)\n",frame->frame,
+	printf("frame #%ld %dx%d stride: %d datasize:%d (device: 0x%x)\n",frame->frame,
 		   frame->width,frame->height,
-		   frame->stride,
+		   frame->stride,frame->dataSize,
 		   (unsigned int)so);
 }
 

@@ -20,6 +20,7 @@
 	QTCaptureDecompressedVideoOutput *decompressedVideoOutput;
 
 	vx_source* source;
+	vx_frame frame;
 }
 
 @property (readwrite, retain) QTCaptureSession *session;
@@ -90,6 +91,23 @@
 				{
 					decompressedVideoOutput = [[QTCaptureDecompressedVideoOutput alloc] init];
 
+
+
+					NSDictionary* videoOutputSettings;
+					videoOutputSettings = [NSDictionary dictionaryWithObjectsAndKeys:
+							[NSNumber numberWithInt:320], (id)kCVPixelBufferWidthKey,
+							[NSNumber numberWithInt:240], (id)kCVPixelBufferHeightKey,
+							[NSNumber numberWithUnsignedInt:kCVPixelFormatType_32ARGB], (id)kCVPixelBufferPixelFormatTypeKey,
+							[NSNumber numberWithBool:YES], (id)kCVPixelBufferOpenGLCompatibilityKey,
+							nil];
+
+					[decompressedVideoOutput setPixelBufferAttributes:videoOutputSettings];
+
+//					[decompressedVideoOutput setPixelBufferAttributes:[NSDictionary dictionaryWithObjectsAndKeys:
+//							[NSNumber numberWithUnsignedInt:kCVPixelFormatType_24RGB], kCVPixelBufferPixelFormatTypeKey,
+//							nil]];
+
+
 					decompressedVideoOutput.delegate = self;
 
 					if([self.session addOutput:decompressedVideoOutput error:&error]) {
@@ -111,6 +129,7 @@
 
 - (void)start
 {
+	frame.frame = 0;
 	if (self.session) [self.session startRunning];
 }
 
@@ -136,8 +155,6 @@
 	}
 
 	OSType formatType = CVPixelBufferGetPixelFormatType(videoFrame);
-
-	vx_frame frame;
 
 	frame.frame++;
 	frame.data = CVPixelBufferGetBaseAddress(videoFrame);
