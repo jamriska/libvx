@@ -13,7 +13,7 @@
 
 typedef struct vx_source_gstreamer {
 	/* base class */
-	vx_source _source;
+	vx_source source;
 
 	/* GStreamer pipeline */
 	GstElement *pipeline;
@@ -25,6 +25,10 @@ typedef struct vx_source_gstreamer {
 } vx_source_gstreamer;
 
 
+/* helper */
+#define VX_GSTREAMER_CAST(ptr) \
+	((vx_source_gstreamer*)(ptr))
+
 
 static
 gboolean
@@ -35,17 +39,11 @@ bufferProbeCallback(GstPad* pad, GstBuffer* buffer, gpointer user_data) {
 	gint width,height;
 	gdouble rate;
 
-	vx_frame probe;
 
 	vx_source_gstreamer *vid = (vx_source_gstreamer*)user_data;
 
-	/* just bail out */
-	if (vid == NULL ||
-		vid->_source.context == 0) return TRUE;
-
-	if(vid->_source.state != VX_SOURCE_STATE_RUNNING)
+	if(vid->source.state != VX_source_STATE_RUNNING)
 		return TRUE;
-
 
 	caps = gst_pad_get_negotiated_caps(pad);
 
@@ -60,14 +58,17 @@ bufferProbeCallback(GstPad* pad, GstBuffer* buffer, gpointer user_data) {
 		gst_structure_get_double(str,"framerate",&rate);
 
 	}
+	vx_frame probe;
 
 	probe.width = width;
 	probe.height = height;
 	probe.dataSize = GST_BUFFER_SIZE(buffer);
 	probe.data = GST_BUFFER_DATA(buffer);
 	probe.stride = probe.dataSize/probe.height;
+	
+	_vx_send_frame(vid->source,&frame);
 
-	vid->_source.context->frameCallback(vid->_source.context,&probe,vid->_source.context->frameCallbackUserData);
+	// vid->_source.context->frameCallback(vid->_source.context,&probe,vid->_source.context->frameCallbackUserData);
 
 //	printf("%s %d\n",__FUNCTION__,__LINE__);
 
@@ -318,6 +319,14 @@ int vx_source_gstreamer_get_state(vx_source *s,int *state)
 	return 0;
 }
 
+
+int 
+vx_source_gstreamer_enumerate(vx_source* s,vx_source_description** e)
+{
+	return 0;
+}
+
+
 void*
 vx_source_gstreamer_create()
 {
@@ -330,16 +339,12 @@ vx_source_gstreamer_create()
 
 	vx_source_gstreamer* s = malloc(sizeof(struct vx_source_gstreamer));
 
-	s->_source.open = 0;
-	s->_source.close = 0;
-	s->_source.set_state = 0;
-	s->_source.get_state = 0;
-
-
+	VX_SOURCE_CAST(s)->enumerate = vx_source_gstreamer_enumerate;
 	VX_SOURCE_CAST(s)->open = vx_source_gstreamer_open;
 	VX_SOURCE_CAST(s)->close = vx_source_gstreamer_close;
 	VX_SOURCE_CAST(s)->set_state = vx_source_gstreamer_set_state;
 	VX_SOURCE_CAST(s)->get_state = vx_source_gstreamer_get_state;
+	VX_SOURCE_CAST(s)->update = vx_source_gstreamer_update;
 
 
 	return s;

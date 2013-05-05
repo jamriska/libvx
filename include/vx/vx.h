@@ -38,10 +38,7 @@ either expressed or implied, of the VideoExtractor Project.
 
 VX_C_DECL_BEGIN
 
-
-int vx_core_init();
-
-
+VX_API_CALL int vx_core_init();
 
 VX_C_DECL_END
 

@@ -8,10 +8,11 @@
 #import <CoreMedia/CoreMedia.h>
 #import <AVFoundation/AVFoundation.h>
 
-/* Helpers */
+/* helpers */
 #define VX_AVFOUNDATION_CAST(ptr) \
 	((vx_source_avfoundation*)(ptr))
 
+/* delegate for receiving the buffer samples - acts as a holder for the session */
 @interface VXCaptureDelegate : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 {
 	vx_source* source;
@@ -150,13 +151,11 @@
 
 @end
 
-///
+/* actual interface */
 
 typedef struct vx_source_avfoundation {
-	vx_source super;
-
+	vx_source				super;
 	VXCaptureDelegate		*delegate;
-
 } vx_source_avfoundation;
 
 
@@ -248,11 +247,11 @@ int vx_source_avfoundation_set_state(vx_source* s,int state)
 
 	switch (state) {
 	case VX_SOURCE_STATE_RUNNING:
-	[VX_AVFOUNDATION_CAST(s)->delegate start];
-	break;
+		[VX_AVFOUNDATION_CAST(s)->delegate start];
+		break;
 	case VX_SOURCE_STATE_STOP:
-	[VX_AVFOUNDATION_CAST(s)->delegate stop];
-	break;
+		[VX_AVFOUNDATION_CAST(s)->delegate stop];
+		break;
 	}
 
 	[pool drain];
@@ -264,6 +263,8 @@ int vx_source_avfoundation_get_state(vx_source* s,int* state)
 	if (VX_AVFOUNDATION_CAST(s)->delegate) {
 		if ([VX_AVFOUNDATION_CAST(s)->delegate isRunning]) {
 			*state = VX_SOURCE_STATE_RUNNING;
+		} else {
+			*state = VX_SOURCE_STATE_STOP;
 		}
 	}
 
