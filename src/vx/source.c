@@ -17,6 +17,10 @@
 	#include "_backends/avfoundation/avfoundation_backend.h"
 #endif
 
+#if defined(HAVE_QTKIT)
+	#include "_backends/qtkit/qtkit_backend.h"
+#endif
+
 int
 vx_source_ref_init(vx_source *s) {
 	if (s) { VX_OBJECT(s)->refCount = 0; return 0;}
@@ -49,9 +53,12 @@ const char* vx_source_default()
 	static char _null[] = "null";
 	static char _gstreamer[] = "gstreamer";
 	static char _avfoundation[] = "avfoundation";
+	static char _qtkit[] = "qtkit";
 
 #if defined(HAVE_GSTREAMER)
 	return _gstreamer;
+#elif defined(HAVE_QTKIT)
+	return _qtkit;
 #elif defined(HAVE_AVFOUNDATION)
 	return _avfoundation;
 #endif
@@ -81,7 +88,13 @@ vx_source_create(const char *n) {
 	}
 #endif
 
-	 vx_source_ref_init(result);
+#if defined(HAVE_QTKIT)
+	if (0 == strcmp("qtkit",n)) {
+		result = vx_source_qtkit_create();
+	}
+#endif
+
+	vx_source_ref_init(result);
 
 	 return result;
 }
@@ -151,7 +164,7 @@ int _vx_send_frame(vx_source* source,const vx_frame* frame)
 	int i = 0;
 	for(i = 0;i < source->sinkCount;++i)
 	{
-		source->sink[i].frameCallback(&source->sink[i], frame, source->sink[i].frameCallbackUserData);
+		source->sink[i].frameCallback(source,&source->sink[i], frame, source->sink[i].frameCallbackUserData);
 	}
 
 	return 0;

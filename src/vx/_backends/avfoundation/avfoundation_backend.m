@@ -63,7 +63,6 @@
 	[self.session stopRunning];
 }
 
-
 - (BOOL) isRunning
 {
 	return [self.session isRunning];
@@ -125,7 +124,10 @@
 	self.session = [[AVCaptureSession alloc] init];
 
 	AVCaptureVideoDataOutput *captureOutput = [[AVCaptureVideoDataOutput alloc] init];
-	[captureOutput setSampleBufferDelegate:self queue:dispatch_get_main_queue()];
+	dispatch_queue_t aQueue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+	[captureOutput setSampleBufferDelegate:self queue:aQueue];
+
+	dispatch_release(aQueue);
 
 	NSDictionary *settings = [NSDictionary dictionaryWithObject:
 		 [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]
@@ -253,6 +255,8 @@ int vx_source_avfoundation_set_state(vx_source* s,int state)
 		[VX_AVFOUNDATION_CAST(s)->delegate stop];
 		break;
 	}
+
+
 
 	[pool drain];
 	return 0;

@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 static void
-frameCallback(vx_sink* c, const vx_frame* frame,void* userData)
+frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 {
 	printf("frame #%ld %dx%d stride: %d\n",frame->frame,
 		   frame->width,frame->height,
@@ -14,7 +14,6 @@ frameCallback(vx_sink* c, const vx_frame* frame,void* userData)
 
 int main(int argc, char** argv)
 {
-
 	int i = 0;
 
 	vx_source *source;
@@ -25,7 +24,6 @@ int main(int argc, char** argv)
 		source = vx_source_create(argv[1]);
 	else
 		source = vx_source_create(0);
-
 
 	vx_source_enumerate(source,&d);
 

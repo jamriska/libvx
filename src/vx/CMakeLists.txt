@@ -59,6 +59,29 @@ else()
 	message(STATUS "AVFoundation: NO")
 endif()
 
+find_path(QTKIT_INCLUDE_DIR QTKit/QTkit.h)
+
+if(QTKIT_INCLUDE_DIR)
+	set(HAVE_QTKIT 1)
+	message(STATUS "QTkit: YES")
+	find_library(QTkit QTKIT_LIBRARY)
+
+	list(APPEND backend_srcs
+		_backends/qtkit/qtkit_backend.m
+		_backends/qtkit/qtkit_backend.h
+		)
+
+	find_library(COREMEDIA_LIBRARY CoreMedia)
+	find_library(COREVIDEO_LIBRARY CoreVideo)
+	find_library(QTKIT_LIBRARY QTkit)
+
+	list(APPEND backend_libs  ${COREMEDIA_LIBRARY} ${COREVIDEO_LIBRARY} ${QTKIT_LIBRARY})
+
+else()
+	message(STATUS "QTkit: NO")
+
+endif()
+
 if(GSTREAMER_FOUND)
 
 	message(STATUS "GStreamer: YES")

@@ -31,8 +31,9 @@ THE SOFTWARE.
 VX_C_DECL_BEGIN
 
 typedef struct vx_sink vx_sink;
+typedef struct vx_source vx_source;
 
-typedef void (*vx_frame_cb_t) (vx_sink* c, const vx_frame* f, void *userdata);
+typedef void (*vx_frame_cb_t) (vx_source* source, vx_sink* sink, const vx_frame* f, void *userdata);
 
 VX_API_CALL vx_sink* vx_sink_create(const char* name);
 

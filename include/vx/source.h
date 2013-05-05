@@ -35,7 +35,9 @@ either expressed or implied, of the VideoExtractor Project.
 #include <vx/cdecl.h>
 #include <vx/context.h>
 
-
+/**
+ * @brief The vx_source_state enum
+ */
 enum vx_source_state {
 	VX_SOURCE_STATE_NULL		= 0,
 	VX_SOURCE_STATE_READY,
@@ -46,16 +48,30 @@ enum vx_source_state {
 	VX_SOURCE_STATE_USERDEFINED = 0xFF
 };
 
+/**
+ * @brief Update methods
+ */
+enum vx_source_update_method {
+	VX_SOURCE_UPDATE_NONE		= 0,
+	VX_SOURCE_UPDATE_PEEK,
+	VX_SOURCE_UPDATE_FULL
+};
 
+
+/**
+  * @brief description of devices
+  */
 typedef struct vx_source_description {
 	char* name;
 	char* uuid;
 } vx_source_description;
 
 
-typedef struct vx_source vx_source;
-
-
+/**
+  * Returns tag for default backend on this platform
+  *
+  * @return string that can be used as input for vx_source_create
+  */
 VX_API_CALL const char * vx_source_default();
 
 /**
@@ -82,8 +98,13 @@ VX_API_CALL int vx_source_set_state(vx_source *s,int newstate);
 
 VX_API_CALL int vx_source_get_state(vx_source *s,int* outstate);
 
+VX_API_CALL int vx_source_set(vx_source *s,int tag,const void* data);
+
+VX_API_CALL int vx_source_get(vx_source *s,int tag,void* data);
+
 VX_API_CALL int vx_source_add_sink(vx_source* source, vx_sink* c);
 
+VX_API_CALL int vx_source_remove_sink(vx_source* source, vx_sink* c);
 
 
 #endif

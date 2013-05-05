@@ -69,5 +69,6 @@
 /* Backends */
 #cmakedefine HAVE_GSTREAMER
 #cmakedefine HAVE_AVFOUNDATION
+#cmakedefine HAVE_QTKIT
 
 #endif
