@@ -7,7 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <_backends/null/null_backend.h>
+#include "_backends/null/null_backend.h"
+#include "_backends/v4l2/v4l2_backend.h"
 
 #if defined(HAVE_GSTREAMER)
 	#include <_backends/gst010/gst010_backend.h>
@@ -54,8 +55,11 @@ const char* vx_source_default()
 	static char _gstreamer[] = "gstreamer";
 	static char _avfoundation[] = "avfoundation";
 	static char _qtkit[] = "qtkit";
+    static char _v4l2[] = "v4l2";
 
-#if defined(HAVE_GSTREAMER)
+#if defined(HAVE_V4L2)
+    return _v4l2;
+#elif defined(HAVE_GSTREAMER)
 	return _gstreamer;
 #elif defined(HAVE_QTKIT)
 	return _qtkit;
@@ -73,9 +77,12 @@ vx_source_create(const char *n) {
 
 	if (n == 0) return vx_source_create(vx_source_default());
 
-	if (0 == strcmp("null",n)) {
-		result = vx_source_null_create();
-	}
+    if (0 == strcmp("null",n))
+        result = vx_source_null_create();
+
+    if (0 == strcmp("v4l2",n))
+        result = vx_source_v4l2_create();
+
 #if defined(HAVE_GSTREAMER)
 	if (0 == strcmp("gstreamer",n)) {
 		result = vx_source_gstreamer_create();

@@ -70,5 +70,6 @@
 #cmakedefine HAVE_GSTREAMER
 #cmakedefine HAVE_AVFOUNDATION
 #cmakedefine HAVE_QTKIT
+#cmakedefine HAVE_V4L2
 
 #endif

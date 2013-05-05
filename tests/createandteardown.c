@@ -25,14 +25,14 @@ int main(int argc, char** argv)
 	else
 		source = vx_source_create(0);
 
-	vx_source_enumerate(source,&d);
+//	vx_source_enumerate(source,&d);
 
-	dIt = d;
+//	dIt = d;
 
-	while (dIt && dIt->name) {
-		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
-		dIt++;
-	}
+//	while (dIt && dIt->name) {
+//		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
+//		dIt++;
+//	}
 
 	sink = vx_sink_create("context");
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
 //	vx_sink_unref(sink);
 
-	if (vx_source_open(source,d[0].uuid) == 0)
+    if (vx_source_open(source,/*d[0].uuid*/ "/dev/video0") == 0)
 	{
 		vx_source_add_sink(source,sink);
 

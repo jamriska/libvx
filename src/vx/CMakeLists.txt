@@ -1,5 +1,4 @@
 
-find_package(GStreamer0.10)
 
 set(srcs
 	kernel.c
@@ -37,6 +36,9 @@ set(backend_libs)
 
 find_path(AVFOUNDATION_INCLUDE_DIR AVFoundation/AVFoundation.h)
 
+#
+# Mac OS X (10.7 upwards) and iOS
+#
 if(AVFOUNDATION_INCLUDE_DIR)
 
 	message(STATUS "AVFoundation: YES")
@@ -59,6 +61,10 @@ else()
 	message(STATUS "AVFoundation: NO")
 endif()
 
+
+#
+# QTkit is available from Mac OS X 10.5 on
+#
 find_path(QTKIT_INCLUDE_DIR QTKit/QTkit.h)
 
 if(QTKIT_INCLUDE_DIR)
@@ -82,20 +88,44 @@ else()
 
 endif()
 
-if(GSTREAMER_FOUND)
+#
+# Video 4 Linux is standard API on Linux
+#
+find_package(V4L2)
+if(V4L2_FOUND)
+    set(HAVE_V4L2 1)
+    message(STATUS "V4L2: YES")
 
-	message(STATUS "GStreamer: YES")
+    list(APPEND backend_srcs
+            _backends/v4l2/v4l2_backend.c
+            _backends/v4l2/v4l2_backend.h
+            )
 
-	include_directories(${GSTREAMER_INCLUDE_DIRS})
-	set(HAVE_GSTREAMER 1)
-	list(APPEND backend_srcs
-		_backends/gst010/gst010_backend.c
-		_backends/gst010/gst010_backend.h
-		)
-	list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
+    list(APPEND backend_libs ${LIBV4L2_LIBRARIES} rt)
+
 else()
-	message(STATUS "GStreamer: NO")
+    message(STATUS "V4L2: NO")
 endif()
+
+
+#
+# GStreamer can be found on Linux, Mac and Windows
+#
+find_package(GStreamer0.10)
+if(GSTREAMER_FOUND)
+    message(STATUS "GStreamer: YES")
+
+    include_directories(${GSTREAMER_INCLUDE_DIRS})
+    set(HAVE_GSTREAMER 1)
+    list(APPEND backend_srcs
+            _backends/gst010/gst010_backend.c
+            _backends/gst010/gst010_backend.h
+            )
+    list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
+else()
+    message(STATUS "GStreamer: NO")
+endif()
+
 
 set(VX_LIBRARY_TARGET)
 option(VX_BUILD_STANDALONE_LIBRARY off)
@@ -104,7 +134,6 @@ if(VX_BUILD_STANDALONE_LIBRARY)
 else()
 	set(VX_LIBRARY_TARGET STATIC)
 endif()
-
 
 
 configure_file(

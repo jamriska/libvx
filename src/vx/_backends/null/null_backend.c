@@ -34,6 +34,18 @@ int vx_source_null_get_state(vx_source* s,int* state)
 	return 0;
 }
 
+int vx_source_null_enumerate(vx_source* s, vx_source_description **e)
+{
+    printf("%s %d\n",__FUNCTION__,__LINE__);
+    return 0;
+}
+
+int vx_source_null_update(vx_source* s)
+{
+    printf("%s %d\n",__FUNCTION__,__LINE__);
+    return 0;
+}
+
 void*
 vx_source_null_create()
 {
@@ -43,6 +55,8 @@ vx_source_null_create()
 	VX_SOURCE_CAST(s)->close = vx_source_null_close;
 	VX_SOURCE_CAST(s)->set_state = vx_source_null_set_state;
 	VX_SOURCE_CAST(s)->get_state = vx_source_null_get_state;
+    VX_SOURCE_CAST(s)->enumerate = vx_source_null_enumerate;
+    VX_SOURCE_CAST(s)->update = vx_source_null_update;
 
 	return s;
 }
