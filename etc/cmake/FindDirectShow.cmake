@@ -13,12 +13,13 @@ if(MINGW)
 
 	get_filename_component(MINGW_ROOT ${CMAKE_MAKE_PROGRAM} PATH)
 	
-	# message(STATUS "MinGW ${MINGW_ROOT}")
+	message(STATUS "MinGW ${MINGW_ROOT}")
 
 	find_path(_QEDIT_H_INCLUDE_DIR qedit.h
 		${MINGW_ROOT}/../include
 		${MINGW_ROOT}/../../../include
 		${MINGW_ROOT}/../x86_64-w64-mingw32/include
+		${DSHOW_HELPER_DIR}/Include
 		DOC "What is the path where the file dshow.h can be found"
 		)
 		
@@ -36,19 +37,46 @@ if(MINGW)
 		DOC "What is the path where the file dshow.h can be found"
 		)
 
-	find_library(DIRECTSHOW_strmiids_LIBRARY strmiids
+	find_library(DIRECTSHOW_strmiids_LIBRARY_32 strmiids
 		${MINGW_ROOT}/../lib
 		${MINGW_ROOT}/../../../lib
 		${MINGW_ROOT}/../x86_64-w64-mingw32/lib
+		${MINGW_ROOT}/../i686-w64-mingw32/lib
 		NO_DEFAULT_PATH
 	  )
-	find_library(DIRECTSHOW_quartz_LIBRARY quartz
+	find_library(DIRECTSHOW_strmiids_LIBRARY_64 strmiids
+		${MINGW_ROOT}/../lib
+		${MINGW_ROOT}/../../../lib
+		${MINGW_ROOT}/../x86_64-w64-mingw32/lib64
+		${MINGW_ROOT}/../i686-w64-mingw32/lib64
+		NO_DEFAULT_PATH
+	  )
+	  
+	find_library(DIRECTSHOW_quartz_LIBRARY_32 quartz
 		${MINGW_ROOT}/../lib
 		${MINGW_ROOT}/../../../lib
 		${MINGW_ROOT}/../x86_64-w64-mingw32/lib
+		${MINGW_ROOT}/../i686-w64-mingw32/lib
 		DOC "Where can the DirectShow quartz library be found"
 		NO_DEFAULT_PATH
 	  )
+
+	find_library(DIRECTSHOW_quartz_LIBRARY_64 quartz
+		${MINGW_ROOT}/../lib
+		${MINGW_ROOT}/../../../lib
+		${MINGW_ROOT}/../x86_64-w64-mingw32/lib64
+		${MINGW_ROOT}/../i686-w64-mingw32/lib64
+		DOC "Where can the DirectShow quartz library be found"
+		NO_DEFAULT_PATH
+		)
+		
+	if(CMAKE_CL_64)
+		set(_QUARTZ_LIBRARY ${DIRECTSHOW_quartz_LIBRARY_64})
+		set(_STRMIIDS_LIBRARY ${DIRECTSHOW_strmiids_LIBRARY_64})
+	else()
+		set(_QUARTZ_LIBRARY ${DIRECTSHOW_quartz_LIBRARY_32})
+		set(_STRMIIDS_LIBRARY ${DIRECTSHOW_strmiids_LIBRARY_32})
+	endif()
 endif()
 
 if(MSVC)
