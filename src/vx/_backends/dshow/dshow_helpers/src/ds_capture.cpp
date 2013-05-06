@@ -11,10 +11,6 @@
 *
 */
 
-
-# 
-#include <windows.h>
-
 #include "ds_capture.h"
 
 #include <stdio.h>
@@ -28,10 +24,10 @@ bool ignore_compare(int measurement, int minVal)
 	return (minVal < 0) ? false : (measurement < minVal); 
 }
 
+#include <string>
 
-
-#define SSTT_VERBOSE_DEBUG 1
-//#undef SSTT_VERBOSE_DEBUG
+//#define SSTT_VERBOSE_DEBUG 1
+#undef SSTT_VERBOSE_DEBUG
 #if defined(SSTT_VERBOSE_DEBUG)
 #include <iostream>
 //	#define SSTT_DS_DEBUG(message) \
@@ -744,13 +740,6 @@ STDMETHODIMP CaptureFilter::QueryInterface( REFIID riid, void **ppv )
 {
 	SSTT_DS_DEBUG("CaptureFilter::QueryInterface - In");
 
-#if defined(SSTT_VERBOSE_DEBUG)
-	fprintf(stdout,"%s 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x",
-		__FUNCTION__,
-		riid.Data1,riid.Data2,riid.Data3,
-		riid.Data4[0],riid.Data4[1],riid.Data4[2],riid.Data4[3],riid.Data4[4],riid.Data4[5],riid.Data4[6],riid.Data4[7]);
-#endif
-
 	if( IsEqualIID(riid , IID_IUnknown ) ) {
 		*ppv = static_cast<IUnknown*>(this);
 	} else
@@ -763,6 +752,13 @@ STDMETHODIMP CaptureFilter::QueryInterface( REFIID riid, void **ppv )
 	if( IsEqualIID(riid , IID_IBaseFilter ) ) {
 		*ppv = static_cast<IBaseFilter*>(this);
 	} else {
+
+#if defined(SSTT_VERBOSE_DEBUG)
+    fprintf(stderr,"%s unknown filter: 0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x\n",
+        __FUNCTION__,
+        riid.Data1,riid.Data2,riid.Data3,
+        riid.Data4[0],riid.Data4[1],riid.Data4[2],riid.Data4[3],riid.Data4[4],riid.Data4[5],riid.Data4[6],riid.Data4[7]);
+#endif
 
 		SSTT_DS_DEBUG("CaptureFilter::QueryInterface - Fail");
 
@@ -1298,10 +1294,10 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 
             if (1)
 			{
-                vx_frame f;
+                //vx_frame f;
 
-                f.width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
-                f.height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
+                _temp.width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
+                _temp.height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
 
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12) ||
 					//IsEqualGUID(pmt->subtype,MEDIASUBTYPE_I420) ||
@@ -1310,21 +1306,24 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV) ||
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_UYVY)
 					)
-				{
+                {
                     //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
 				}
 #if !defined(_WIN32_WCE)
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32)) {
+                    _temp.colorModel = VX_E_COLOR_ABGR;
+                    _temp.stride = _temp.width * ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount / 8;
                     //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,4);
 				}
 #endif
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24)) {
+                    _temp.colorModel = VX_E_COLOR_BGR24;
                     //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
 				}
 			}
 
 #if defined(SSTT_VERBOSE_DEBUG)
-			fprintf(stdout,"%s - Format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
+            fprintf(stdout,"%s - Selected format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
 				__FUNCTION__,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
@@ -1350,6 +1349,8 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 		uFreeMediaType( _connected_mediatype );
 		uCopyMediaType( &_connected_mediatype, pmt );
 	}
+
+    _temp.frame = 0;
 
 	SSTT_DS_DEBUG("CapturePin::QueryAccept - Out: Ok");
 
@@ -1485,6 +1486,7 @@ STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 
 	SSTT_DS_DEBUG("CapturePin::Receive - Entry");
 
+//    fprintf(stdout,"%s 0x%x\n",__FUNCTION__,this->_handle);
 
 	//sstt_autotrylock<sstt_mutex> trylock(_handle->get_parent()->_mutex);
 
@@ -1498,6 +1500,7 @@ STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 
 		pSample->GetPointer(&ppBuffer);
 
+        _temp.frame++;
 		_temp.data = ppBuffer;
 
 		_vx_send_frame((vx_source*)this->_handle,&_temp);
@@ -1697,7 +1700,8 @@ STDMETHODIMP CaptureEnumMediaTypes::QueryInterface( REFIID riid, void **ppv )
 		*ppv = NULL;
 		return E_NOINTERFACE;
 	}
-};
+}
+
 STDMETHODIMP_(ULONG) CaptureEnumMediaTypes::AddRef()
 {
 	return _refcount++;

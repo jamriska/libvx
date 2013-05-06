@@ -300,7 +300,7 @@ int RunCapture(vx_source_dshow* cap)
 
 	if (FAILED(hr))
 	{
-		fprintf(stderr,"%s seems to have failed",__FUNCTION__);
+        fprintf(stderr,"%s seems to have failed\n",__FUNCTION__);
 /*		MessageBox(NULL, _T("Source can not be rendered"), _T("SSTT Capture"),
 			MB_OK | MB_ICONEXCLAMATION);
 		*/
@@ -316,7 +316,6 @@ int RunCapture(vx_source_dshow* cap)
 	////	WM_GRAPHNOTIFY,0);
 
 	hr = cap->_Graph->QueryInterface(IID_IMediaControl,(void**)&cap->_MediaControl);
-
 	if (hr != S_OK)
 	{
 		MessageBox(NULL, _T("Cannot get a media control"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
@@ -358,8 +357,11 @@ int RunCapture(vx_source_dshow* cap)
 	}
 
 
-	//SaveGraphFile(cap->_Graph, L"sstt_debug.grf");
+//    fprintf(stdout,"%s running? (%d)\n",__FUNCTION__,hr);
 
+//    Sleep(1000);
+
+	//SaveGraphFile(cap->_Graph, L"sstt_debug.grf");
 
 	return 0;
 }
@@ -468,7 +470,7 @@ int vx_source_dshow_set_state(vx_source* s,int state)
 		break;
 	}
 
-	printf("%s %d\n",__FUNCTION__,__LINE__);
+    printf("%s %d (%d)\n",__FUNCTION__,__LINE__,state);
 	return 0;
 }
 
