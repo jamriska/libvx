@@ -1,0 +1,35 @@
+
+libVX - Video Extension
+-----------------------
+
+libVX is a protocol library to get raw video frames efficiently from video files
+and live video sources. Unlike other libraries, it does only handle setup and
+capture processing. libVX was written to serve as an abstraction layer for
+video acquisition for Augmented Reality (AR) applications. Converting image
+buffers is out of scope and should be done in the client code.
+
+
+Supported Platforms
+------------------- 
+
+- Windows XP - 8, Windows CE, Mobile 5 and 6
+	- DirectShow
+
+- Mac OS X (>= 10.5)
+	- QTkit 
+
+- Mac OS X (>= 10.7) and iOS 4+
+	- AVFoundation
+
+- Linux
+	- Video for Linux
+
+- All
+	- GStreamer
+
+
+Contact
+-------
+
+If you have any questions or suggestions, please contact Hartmut Seichter
+

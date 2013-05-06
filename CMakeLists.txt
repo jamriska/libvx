@@ -31,12 +31,6 @@ set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
 set(INSTALL_BIN_DIR bin CACHE PATH "Installation directory for executables")
 set(INSTALL_INCLUDE_DIR include CACHE PATH "Installation directory for headers")
 
-
-include(CheckIncludeFiles)
-include(CheckIncludeFile)
-
-
-
 add_subdirectory(src)
 add_subdirectory(tests)
 

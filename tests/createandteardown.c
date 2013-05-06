@@ -1,7 +1,6 @@
 
 
 #include <vx/vx.h>
-
 #include <stdio.h>
 
 static void
@@ -19,6 +18,8 @@ int main(int argc, char** argv)
 	vx_source *source;
 	vx_sink *sink;
 	vx_source_description *d, *dIt;
+
+	d = 0; dIt = d;
 
 	if (argc > 1)
 		source = vx_source_create(argv[1]);
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
 
 //	vx_sink_unref(sink);
 
-    if (vx_source_open(source,/*d[0].uuid*/ "/dev/video0") == 0)
+    if (vx_source_open(source,"blash") == 0)
 	{
 		vx_source_add_sink(source,sink);
 
@@ -51,6 +52,7 @@ int main(int argc, char** argv)
 
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
+			//printf("%d\n",i);
 			vx_source_update(source);
 		}
 
@@ -61,10 +63,6 @@ int main(int argc, char** argv)
 		vx_source_unref(source);
 
 	}
-
-
-	getchar();
-
 
 	return 0;
 }
