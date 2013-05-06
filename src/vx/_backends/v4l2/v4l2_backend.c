@@ -103,9 +103,7 @@ int vx_source_v4l2_open(vx_source* s, const char* n)
     // post-check
     if (VX_V4L2_CAST(s)->_format.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24)
     {
-
-
-        printf("Libv4l didn't accept RGB24 format. Can't proceed.\n");
+       printf("Libv4l didn't accept RGB24 format. Can't proceed.\n");
         return -1;
              //exit(EXIT_FAILURE);
     }
@@ -237,13 +235,15 @@ int vx_source_v4l2_update(vx_source* s)
 
     /* Timeout. */
     tv.tv_sec = 0;
-    tv.tv_usec = 10;
+    tv.tv_usec = 100;
 
-    r = select(VX_V4L2_CAST(s)->_fd + 1, &fds, NULL, NULL, &tv);
+    r = select(VX_V4L2_CAST(s)->_fd, &fds, NULL, NULL, &tv);
 
     /* basically mean we don't have a new frame */
-    if ( (r == -1) && errno == EINTR ) return 0;
-
+    if ( (r == -1) && errno == EINTR ) {
+        fprintf(stderr,"Error Select!\n");
+        return 0;
+    }
 
     CLEAR(VX_V4L2_CAST(s)->_buffer);
     VX_V4L2_CAST(s)->_buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;

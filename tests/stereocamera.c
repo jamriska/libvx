@@ -1,6 +1,8 @@
 #include <vx/vx.h>
 #include <stdio.h>
 
+
+
 #if defined(__APPLE__)
 #define UUID_1 "0xfa1410000ac83420"
 #define UUID_2 "0xfa1440000ac83410"
@@ -66,7 +68,7 @@ int main(int argc, char** argv)
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
 			vx_source_update(source_1);
-//			vx_source_update(source_2);
+            vx_source_update(source_2);
 		}
 
 		vx_source_set_state(source_1,VX_SOURCE_STATE_STOP);
