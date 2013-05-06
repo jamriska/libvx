@@ -7,7 +7,7 @@
 #   DIRECTSHOW_LIBRARIES    - libraries you need to link to
 
 
-set(FINDDIRECTSHOW_DEBUG OFF)  
+set(FINDDIRECTSHOW_DEBUG ON)  
 
 if(MINGW)
 
@@ -65,6 +65,7 @@ if(MSVC)
 	
 	find_path(_QEDIT_H_INCLUDE_DIR qedit.h
 	  "${MS_PLATFORMSDK_ROOT}/Include"
+	  ${DSHOW_HELPER_DIR}/Include
       DOC "What is the path where the file dshow.h can be found"
       #NO_DEFAULT_PATH
 	)

@@ -107,6 +107,30 @@ else()
     message(STATUS "V4L2: NO")
 endif()
 
+# 
+# DirectShow can be found on Windows and Windows Mobile
+#
+set(DSHOW_HELPER_DIR _backends/dshow/dshow_helpers)
+find_package(DirectShow)
+if(DIRECTSHOW_FOUND)
+	message(STATUS "DirectShow: YES")
+	set(HAVE_DSHOW 1)
+
+	include_directories(${DIRECTSHOW_INCLUDE_DIRS})
+   
+    list(APPEND backend_srcs
+            _backends/dshow/dshow_backend.cpp
+            _backends/dshow/dshow_backend.h
+			_backends/dshow/dshow_helpers/src/ds_capture.cpp
+			_backends/dshow/dshow_helpers/src/cpropertybag.cpp
+            )
+
+    list(APPEND backend_libs ${DIRECTSHOW_LIBRARIES})
+
+else()
+   message(STATUS "DirectShow: NO")
+
+endif() 
 
 #
 # GStreamer can be found on Linux, Mac and Windows
@@ -125,6 +149,8 @@ if(GSTREAMER_FOUND)
 else()
     message(STATUS "GStreamer: NO")
 endif()
+
+
 
 
 set(VX_LIBRARY_TARGET)

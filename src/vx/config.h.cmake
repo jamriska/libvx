@@ -71,5 +71,6 @@
 #cmakedefine HAVE_AVFOUNDATION
 #cmakedefine HAVE_QTKIT
 #cmakedefine HAVE_V4L2
+#cmakedefine HAVE_DSHOW
 
 #endif

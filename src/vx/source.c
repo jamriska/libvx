@@ -9,6 +9,7 @@
 
 #include "_backends/null/null_backend.h"
 #include "_backends/v4l2/v4l2_backend.h"
+#include "_backends/dshow/dshow_backend.h"
 
 #if defined(HAVE_GSTREAMER)
 	#include <_backends/gst010/gst010_backend.h>
@@ -56,9 +57,13 @@ const char* vx_source_default()
 	static char _avfoundation[] = "avfoundation";
 	static char _qtkit[] = "qtkit";
     static char _v4l2[] = "v4l2";
+	static char _dshow[] = "directshow";
+
 
 #if defined(HAVE_V4L2)
     return _v4l2;
+#elif defined(HAVE_DSHOW)
+	return _dshow;
 #elif defined(HAVE_GSTREAMER)
 	return _gstreamer;
 #elif defined(HAVE_QTKIT)
@@ -82,6 +87,9 @@ vx_source_create(const char *n) {
 
     if (0 == strcmp("v4l2",n))
         result = vx_source_v4l2_create();
+
+	if (0 == strcmp("directshow",n))
+		result = vx_source_dshow_create();
 
 #if defined(HAVE_GSTREAMER)
 	if (0 == strcmp("gstreamer",n)) {

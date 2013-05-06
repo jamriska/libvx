@@ -27,6 +27,8 @@ int main(int argc, char** argv)
 	vx_source *source_1,*source_2;
 	vx_sink *sink;
 	vx_source_description *d, *dIt;
+	int state;
+
 
 	source_1 = vx_source_create(vx_source_default());
 	source_2 = vx_source_create(vx_source_default());
@@ -59,7 +61,6 @@ int main(int argc, char** argv)
 			printf("Error starting source 2\n");
 		}
 
-		int state;
 		vx_source_get_state(source_1,&state);
 		printf("Source 1 state:%d\n",state);
 		vx_source_get_state(source_2,&state);
