@@ -17,18 +17,19 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <tchar.h>
 
 #if defined(__MINGW32__)
 #include <ocidl.h>
 #include <basetyps.h>
 #include <oleauto.h>
 #include <strmif.h>
-#include "missing_mingw440.h"
+//#include "missing_mingw440.h"
 
 #endif
 
 #if !defined(_WIN32_WCE) && !defined(__MINGW32__)
-#include <atlbase.h>
+    #include <atlbase.h>
 #endif //!defined(WINCE)
 
 #include <dshow.h>
@@ -50,10 +51,6 @@
 	#pragma comment(lib,"strmbase")
 #endif
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <tchar.h>
-
 #include "cpropertybag.h"
 
 
@@ -68,7 +65,7 @@
 #define UDSHOW_API inline
 
 void 
-UDSHOW_API LPWSTR_2_UTF8(LPWSTR wSTR,char* name,unsigned int encoding = CP_UTF8)
+UDSHOW_API LPWSTR_2_UTF8(const LPWSTR wSTR,char* outBuffer,unsigned int encoding = CP_UTF8)
 {
 	int nNameLenUnicode = lstrlenW( wSTR ); 
 
@@ -76,16 +73,17 @@ UDSHOW_API LPWSTR_2_UTF8(LPWSTR wSTR,char* name,unsigned int encoding = CP_UTF8)
 		WideCharToMultiByte(encoding,0,
 		wSTR,nNameLenUnicode,0,0,0,0);
 
-	name = new char[ nNameLen + 1 ]; 
+	outBuffer = new char[ nNameLen + 1 ]; 
 
 	WideCharToMultiByte(encoding,0,
 		wSTR,nNameLenUnicode,
-		name,nNameLen,0,0);
-
-	name[nNameLen] = 0;
+		outBuffer,nNameLen,0,0);
 
 
-	printf("%s %s %d\n",__FUNCTION__,name,nNameLenUnicode);
+	outBuffer[nNameLen] = 0;
+
+
+	printf("%s %s %d\n",__FUNCTION__,outBuffer,nNameLenUnicode);
 
 }
 
@@ -295,6 +293,7 @@ _ws2mbsConvert (const wchar_t * s, void *d)
 UDSHOW_API HRESULT GetCaptureDeviceWithUID(IBaseFilter** ppCap, const char* UID)
 {
 	HRESULT hr(E_FAIL);
+
 #ifndef _WIN32_WCE
 
 	ICreateDevEnum* pCreateDevEnum(NULL);
@@ -352,26 +351,24 @@ UDSHOW_API HRESULT GetCaptureDeviceWithUID(IBaseFilter** ppCap, const char* UID)
 		var_name.vt = VT_BSTR;
 		hr = pBag->Read( L"FriendlyName", &var_name, NULL );
 
-		VARIANT var_guid;
-		var_guid.vt = VT_BSTR;
-		hr = pBag->Read( L"UniqueID", &var_guid, NULL );
+		//VARIANT var_guid;
+		//var_guid.vt = VT_BSTR;
+		//hr = pBag->Read( L"UniqueID", &var_guid, NULL );
 		
 #if !defined(__MINGW32__)
 
-		USES_CONVERSION;
-		const char* name = COLE2CT(var_name.bstrVal);
+		//USES_CONVERSION;
+		//const char* name = COLE2CT(var_name.bstrVal);
 
 		LPOLESTR disp_name;
 		pM->GetDisplayName(NULL,NULL,&disp_name);
 
 
-		char* currUID(0);
+		char *currUID(0);
 
 		LPWSTR_2_UTF8(disp_name,currUID);
 
-		//char* auid = _strdup( /*ws2mbsConvert(disp_name)*/ _ws2mbs(disp_name) );
-
-		if (0 == strcmp(currUID,UID))
+		if (currUID && (0 == strcmp(currUID,UID)))
 		{
 			hr = pM->BindToObject( 0, 0, IID_IBaseFilter, (void**) ppCap );
 			hr = S_OK;

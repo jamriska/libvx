@@ -15,6 +15,9 @@
 	#include <_backends/gst010/gst010_backend.h>
 #endif
 
+/* only AVFoundation and QTkit need to be conditional as they use
+ * a backend written in Objective-C
+ */
 #if defined(HAVE_AVFOUNDATION)
 	#include "_backends/avfoundation/avfoundation_backend.h"
 #endif
@@ -49,16 +52,16 @@ vx_source_unref(vx_source *s) {
 	return -1;
 }
 
+static char _null[] = "null";
+static char _gstreamer[] = "gstreamer";
+static char _avfoundation[] = "avfoundation";
+static char _qtkit[] = "qtkit";
+static char _v4l2[] = "v4l2";
+static char _dshow[] = "directshow";
+
 
 const char* vx_source_default()
 {
-	static char _null[] = "null";
-	static char _gstreamer[] = "gstreamer";
-	static char _avfoundation[] = "avfoundation";
-	static char _qtkit[] = "qtkit";
-    static char _v4l2[] = "v4l2";
-	static char _dshow[] = "directshow";
-
 
 #if defined(HAVE_V4L2)
     return _v4l2;
@@ -74,7 +77,6 @@ const char* vx_source_default()
 	return _null;
 }
 
-
 void *
 vx_source_create(const char *n) {
 
@@ -82,29 +84,29 @@ vx_source_create(const char *n) {
 
 	if (n == 0) return vx_source_create(vx_source_default());
 
-    if (0 == strcmp("null",n))
+    if (0 == strcmp(_null,n))
         result = vx_source_null_create();
 
-    if (0 == strcmp("v4l2",n))
+    if (0 == strcmp(_v4l2,n))
         result = vx_source_v4l2_create();
 
-	if (0 == strcmp("directshow",n))
+    if (0 == strcmp(_dshow,n))
 		result = vx_source_dshow_create();
 
 #if defined(HAVE_GSTREAMER)
-	if (0 == strcmp("gstreamer",n)) {
+    if (0 == strcmp(_gstreamer,n)) {
 		result = vx_source_gstreamer_create();
 	}
 #endif
 
 #if defined(HAVE_AVFOUNDATION)
-	if (0 == strcmp("avfoundation",n)) {
+    if (0 == strcmp(_avfoundation,n)) {
 		result = vx_source_avfoundation_create();
 	}
 #endif
 
 #if defined(HAVE_QTKIT)
-	if (0 == strcmp("qtkit",n)) {
+    if (0 == strcmp(_qtkit,n)) {
 		result = vx_source_qtkit_create();
 	}
 #endif

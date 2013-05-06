@@ -1,4 +1,24 @@
+include(CheckIncludeFiles)
+include(CheckIncludeFile)
+include(CheckLibraryExists)
 
+CHECK_INCLUDE_FILES ("malloc.h" HAVE_MALLOC_H)
+CHECK_INCLUDE_FILES ("sys/param.h;sys/mount.h" HAVE_SYS_MOUNT_H)
+CHECK_INCLUDE_FILES ("dlfcn.h" HAVE_DLFCN_H)
+CHECK_INCLUDE_FILES ("errno.h" HAVE_ERRNO_H)
+CHECK_INCLUDE_FILES ("inttypes.h" HAVE_INTTYPES_H)
+CHECK_INCLUDE_FILES ("limits.h" HAVE_LIMITS_H)
+CHECK_INCLUDE_FILES ("memory.h" HAVE_MEMORY_H)
+CHECK_INCLUDE_FILES ("stdef.h" HAVE_STDDEF_H)
+CHECK_INCLUDE_FILES ("stdint.h" HAVE_STDINT_H)
+CHECK_INCLUDE_FILES ("stdlib.h" HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES ("string.h" HAVE_STRING_H)
+CHECK_INCLUDE_FILES ("strings.h" HAVE_STRINGS_H)
+CHECK_INCLUDE_FILES ("sys/stat.h" HAVE_SYS_STAT_H)
+CHECK_INCLUDE_FILES ("sys/types.h" HAVE_SYS_TYPES_H)
+
+
+CHECK_LIBRARY_EXISTS("m" sin "" HAVE_LIBM)
 
 set(srcs
 	kernel.c
@@ -9,12 +29,22 @@ set(srcs
 file(GLOB internal_hdrs
 	"_*.h"
 	)
+	
+	
+if(MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1)
+endif()
 
 set(misc
 	config.h.cmake
 	${CMAKE_SOURCE_DIR}/AUTHORS
 	${CMAKE_SOURCE_DIR}/README
 	${CMAKE_SOURCE_DIR}/LICENSE
+	)
+
+set_source_files_properties(${misc}
+	APPEND PROPERTY
+	HEADER_ONLY
 	)
 
 include_directories(
@@ -25,6 +55,10 @@ include_directories(
 
 file(GLOB hdrs "${CMAKE_SOURCE_DIR}/include/vx/*.h")
 
+
+#
+# Null driver - Always available
+#
 set(backend_srcs
 	_backends/null/null_backend.c
 	_backends/null/null_backend.h
@@ -97,9 +131,7 @@ if(V4L2_FOUND)
     message(STATUS "V4L2: YES")
 
     list(APPEND backend_srcs
-            _backends/v4l2/v4l2_backend.c
-            _backends/v4l2/v4l2_backend.h
-            )
+			)
 
     list(APPEND backend_libs ${LIBV4L2_LIBRARIES} rt)
 
@@ -135,20 +167,20 @@ endif()
 #
 # GStreamer can be found on Linux, Mac and Windows
 #
-find_package(GStreamer0.10)
-if(GSTREAMER_FOUND)
-    message(STATUS "GStreamer: YES")
+#find_package(GStreamer0.10)
+#if(GSTREAMER_FOUND)
+#    message(STATUS "GStreamer: YES")
 
-    include_directories(${GSTREAMER_INCLUDE_DIRS})
-    set(HAVE_GSTREAMER 1)
-    list(APPEND backend_srcs
-            _backends/gst010/gst010_backend.c
-            _backends/gst010/gst010_backend.h
-            )
-    list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
-else()
-    message(STATUS "GStreamer: NO")
-endif()
+#    include_directories(${GSTREAMER_INCLUDE_DIRS})
+#    set(HAVE_GSTREAMER 1)
+#    list(APPEND backend_srcs
+#            _backends/gst010/gst010_backend.c
+#            _backends/gst010/gst010_backend.h
+#            )
+#    list(APPEND backend_libs ${GSTREAMER_LIBRARIES})
+#else()
+#    message(STATUS "GStreamer: NO")
+#endif()
 
 
 
@@ -167,7 +199,8 @@ configure_file(
 	${CMAKE_BINARY_DIR}/include/vx/config.h
 	)
 
-add_library(vx ${VX_LIBRARY_TARGET} ${srcs} ${hdrs} ${internal_hdrs} ${backend_srcs} ${CMAKE_BINARY_DIR}/include/vx/config.h)
+add_library(vx 
+	${VX_LIBRARY_TARGET} ${srcs} ${hdrs} ${internal_hdrs} ${backend_srcs} ${misc} ${CMAKE_BINARY_DIR}/include/vx/config.h)
 
 target_link_libraries(vx ${backend_libs})
 

@@ -11,13 +11,16 @@
 *
 */
 
+
+# 
 #include <windows.h>
 
 #include "ds_capture.h"
 
-#include <cstdio>
-#include <string>
+#include <stdio.h>
 
+#include "vx/frame.h"
+#include "_source.h"
 
 inline
 bool ignore_compare(int measurement, int minVal) 
@@ -43,7 +46,7 @@ bool ignore_compare(int measurement, int minVal)
 #if !defined(_WIN32_WCE) && !defined(__MINGW32__)
 #	include <wmsdkidl.h>
 #endif
-
+#if 0
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
@@ -557,7 +560,6 @@ void icvVY12toBGR888(char *videoBuffer, char * buffer_rgb, unsigned int Height, 
 	}
 }
 
-#if 0
 void __noyet__(const IplImage* rgb_in, IplImage* rgb_out)
 {
 
@@ -703,12 +705,13 @@ CaptureFilter::CaptureFilter( vx_source_dshow* handle, AM_MEDIA_TYPE *mt, size_t
 	_clock(NULL)
 {
 
+#if 0
 	if (0 == yuv_table)
 	{
 		yuv_table = (cmodel_yuv_t*)malloc(sizeof(cmodel_yuv_t));
 		cmodel_init_yuv(yuv_table);
 	}
-
+#endif
 	size_t mediatypes_count = 2;
 	AM_MEDIA_TYPE *mediatypes = NULL;
 
@@ -1168,11 +1171,8 @@ STDMETHODIMP CapturePin::QueryPinInfo( PIN_INFO * pInfo )
 	if ( _filter )
 		_filter->AddRef();
 
-//#define PIN_NAME L"Capture"
-//	memcpy(pInfo->achName, PIN_NAME, sizeof(PIN_NAME) );
-//#undef  PIN_NAME
-
-	pInfo->achName[0] = L'/0';
+  //  if (pInfo->achName) 
+		//memcpy(pInfo->achName,L'\0',sizeof(WCHAR));
 
 	pInfo->dir = PINDIR_INPUT;
 
@@ -1192,10 +1192,9 @@ STDMETHODIMP CapturePin::QueryDirection( PIN_DIRECTION * pPinDir )
 
 STDMETHODIMP CapturePin::QueryId( LPWSTR * Id )
 {
-
 	SSTT_DS_DEBUG("CapturePin::QueryId");
+    *Id = L"libVX Capture Pin";
 
-	*Id = L"uDirectShow Capture Pin";
 	return S_OK;
 }
 
@@ -1235,17 +1234,18 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 
 		} else {
 
+			SSTT_DS_DEBUG("CapturePin::QueryAccept - Unhandled format!");
+
 		}
 
 		SSTT_DS_DEBUG("CapturePin::QueryAccept - Intermediate");
 
-#if 0
-		if (_handle->_enumerating)
+		if (0) //_handle->_enumerating)
 		{
 			SSTT_DS_DEBUG("CapturePin::QueryAccept - Enumeration Mode");
 
 #if defined(SSTT_VERBOSE_DEBUG)
-			Log::Get().Printf("%s\nFormat\nwidth=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n\n",
+			fprintf(stdout,"%s\nFormat\nwidth=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n\n",
 				__FUNCTION__,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
@@ -1271,15 +1271,16 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 			int actualWidth = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
 			int actualHeight = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
 
-			if ( true == ( ignore_compare(actualWidth,_handle->_traits.minWidth) | 
-				 ignore_compare(actualHeight,_handle->_traits.minHeight)))
+			if ( true == 
+                ( ignore_compare(actualWidth, /*_handle->_traits.minWidth*/640) |
+                  ignore_compare(actualHeight,/*_handle->_traits.minHeight*/480)))
 			{
 				//printf("ignore %dx%d\n",actualWidth,actualHeight);
 
 				SSTT_DS_DEBUG("CapturePin::QueryAccept - Skip format");
 
 #if defined(SSTT_VERBOSE_DEBUG)
-				Log::Get().Printf("%s Format\nwidth=%ld, height=%ld, fps=%f, bit count=%d, planes=%d\n\n",
+				fprintf(stdout,"%s Format\nwidth=%ld, height=%ld, fps=%f, bit count=%d, planes=%d\n\n",
 					__FUNCTION__,
 					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
 					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
@@ -1295,57 +1296,35 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 			/* we could also just skip the format! */
 			SSTT_DS_DEBUG("CapturePin::QueryAccept - Ok");
 
-			if (!_handle->get_parent()->is_image_valid())
+            if (1)
 			{
+                vx_frame f;
 
-				CvSize size = cvSize(
-						abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth),
-						abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight)
-						);
-
-				//std::swap(size.height,size.width);
-
-				//_handle->get_parent()->raw = cvCreateImage(size, IPL_DEPTH_8U, 3);
-					
-				_handle->get_parent()->create(size.width,size.height);
-
+                f.width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
+                f.height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
 
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12) ||
-					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_I420) ||
+					//IsEqualGUID(pmt->subtype,MEDIASUBTYPE_I420) ||
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_IYUV) ||
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2) ||
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV) ||
 					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_UYVY)
 					)
 				{
-					cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
+                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
 				}
 #if !defined(_WIN32_WCE)
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32)) {
-					cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,4);
+                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,4);
 				}
 #endif
 				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24)) {
-					cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
+                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
 				}
-
-
-
-
-
-#if 0
-				_handle->_internal._width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
-				_handle->_internal._height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
-
-				_handle->_internal._buffersize = _handle->_internal._width * _handle->_internal._height * 3;
-
-				_handle->_internal._buffer = static_cast<unsigned char*>(malloc(_handle->_internal._buffersize));
-#endif
-
 			}
 
 #if defined(SSTT_VERBOSE_DEBUG)
-			Log::Get().Printf("%s - Format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
+			fprintf(stdout,"%s - Format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
 				__FUNCTION__,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
 				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
@@ -1356,11 +1335,7 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 				);
 #endif
 
-			//return S_FALSE;
-
 		}
-
-#endif
 
 	} else {
 	//	Log::Get().Printf("CapturePin::QueryAccept - Media Format is not a video");
@@ -1523,6 +1498,13 @@ STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 
 		pSample->GetPointer(&ppBuffer);
 
+		_temp.data = ppBuffer;
+
+		_vx_send_frame((vx_source*)this->_handle,&_temp);
+
+
+
+
 		//REFERENCE_TIME rr,ll;
 
 		//pSample->GetTime(&rr,&ll);
@@ -1621,7 +1603,7 @@ STDMETHODIMP CapturePin::ReceiveMultiple( IMediaSample **pSamples,
 {
 
 
-	//SSTT_DS_DEBUG("CapturePin::ReceiveMultiple");
+	SSTT_DS_DEBUG("CapturePin::ReceiveMultiple");
 
 	HRESULT hr = S_OK;
 

@@ -1,6 +1,5 @@
 /*
-
-Copyright (c) 2006-2012 Hartmut Seichter
+Copyright (c) 2006-2013 Hartmut Seichter
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,9 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the VideoExtractor Project.
-
 */
-
 #ifndef _LIBVX_VX_H_
 #define _LIBVX_VX_H_ 1
 

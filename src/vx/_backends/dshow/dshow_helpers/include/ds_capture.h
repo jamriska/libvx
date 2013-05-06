@@ -18,6 +18,9 @@
 
 #include "ds_helper.h"
 
+#include "_source.h"
+#include "vx/frame.h"
+
 
 typedef struct vx_source_dshow vx_source_dshow;
 
@@ -46,6 +49,8 @@ class CapturePin : public IPin, public IMemInputPin
 	ALLOCATOR_PROPERTIES _allocator_properties;
 
 	BOOL _readonly;
+
+	vx_frame _temp;
 
 public:
 

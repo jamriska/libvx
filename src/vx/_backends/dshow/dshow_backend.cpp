@@ -9,7 +9,7 @@
 #define WINBOOL BOOL
 #endif
 
-#include "_missing_idl.h"
+//#include "_missing_idl.h"
 //#include <streams.h>
 #include <Qedit.h>
 #include <tchar.h>
@@ -28,7 +28,9 @@
 #include <stdio.h>
 
 
-
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
+#endif
 
 
 typedef struct vx_source_dshow {
@@ -209,7 +211,7 @@ int InitRenderer(vx_source_dshow* cap, int renderType = 0)
 int PresetCaptureDevice(vx_source_dshow* cap)
 {
 
-	HRESULT hr(S_OK);
+	HRESULT hr(E_FAIL);
 
 #if defined(_WIN32_WCE)
 
@@ -269,15 +271,18 @@ int PresetCaptureDevice(vx_source_dshow* cap)
 
 #else
 
-	hr = cap->_Graph->AddFilter( cap->_SourceFilter, 0 );
-	if (hr != S_OK)
-	{
-		MessageBox(NULL, _T("Error inserting the capture filter"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
+	if (cap->_SourceFilter) {
+
+		hr = cap->_Graph->AddFilter( cap->_SourceFilter, 0 );
+		if (hr != S_OK)
+		{
+			MessageBox(NULL, _T("Error inserting the capture filter"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
+		}
 	}
 
 #endif
 
-	return 0;
+	return hr;
 }
 
 
@@ -286,7 +291,7 @@ int RunCapture(vx_source_dshow* cap)
 	HRESULT hr(S_OK);
 
 	hr = cap->_GraphBuilder->RenderStream(
-		(/*cap->_allow_drop_frames*/true) ? &PIN_CATEGORY_PREVIEW : &PIN_CATEGORY_CAPTURE,
+		(/*cap->_allow_drop_frames*/false) ? &PIN_CATEGORY_PREVIEW : &PIN_CATEGORY_CAPTURE,
 		&MEDIATYPE_Video,
 		cap->_SourceFilter,
 		cap->_ProxyFilter,
@@ -295,9 +300,8 @@ int RunCapture(vx_source_dshow* cap)
 
 	if (FAILED(hr))
 	{
-		/*
-		Log::Get().Printf("%s seems to have failed",__FUNCTION__);
-		MessageBox(NULL, _T("Source can not be rendered"), _T("SSTT Capture"),
+		fprintf(stderr,"%s seems to have failed",__FUNCTION__);
+/*		MessageBox(NULL, _T("Source can not be rendered"), _T("SSTT Capture"),
 			MB_OK | MB_ICONEXCLAMATION);
 		*/
 	}
@@ -397,6 +401,10 @@ int vx_source_dshow_open(vx_source* s, const char* n)
 {
 	vx_source_dshow* dsSource = VX_DSHOW_CAST(s);
 
+
+	InitGraphBuilder(dsSource);
+	InitFilterGraph(dsSource);
+
 	InitCaptureDevice(dsSource,n);
 	PresetCaptureDevice(dsSource);
 
@@ -420,12 +428,46 @@ int vx_source_dshow_open(vx_source* s, const char* n)
 
 int vx_source_dshow_close(vx_source* s)
 {
+	vx_source_dshow* dsSource = VX_DSHOW_CAST(s);
+
+	SAFE_RELEASE(dsSource->_MediaControl);
+	SAFE_RELEASE(dsSource->_MediaEvent);
+	SAFE_RELEASE(dsSource->_ProxyFilter);
+	SAFE_RELEASE(dsSource->_SinkFilter);
+	SAFE_RELEASE(dsSource->_SourceFilter);
+	SAFE_RELEASE(dsSource->_ProxyFilter);
+	SAFE_RELEASE(dsSource->_GraphBuilder);
+	SAFE_RELEASE(dsSource->_Graph);
+
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;
 }
 
 int vx_source_dshow_set_state(vx_source* s,int state)
 {
+	vx_source_dshow* dsSource = VX_DSHOW_CAST(s);
+
+	switch (state) {
+	case VX_SOURCE_STATE_RUNNING:
+		RunCapture(dsSource);
+		break;
+	case VX_SOURCE_STATE_STOP:
+		{
+
+			OAFilterState fs = State_Running; 
+
+			if (dsSource->_MediaControl) dsSource->_MediaControl->Pause();
+
+			if (dsSource->_MediaControl) {
+				while (fs == State_Running && (dsSource->_MediaControl->GetState(INFINITE,&fs) == S_OK))
+				{
+				}
+				if (dsSource->_MediaControl) dsSource->_MediaControl->Stop();
+			}
+		}
+		break;
+	}
+
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;
 }
@@ -547,8 +589,8 @@ Cleanup:
 
 		char *nameUTF8(0),*displayNameUTF8(0), *guidUTF8(0);
 
-		LPWSTR_2_UTF8(var_name.bstrVal,nameUTF8,CP_ACP);
-		LPWSTR_2_UTF8(var_guid.bstrVal,guidUTF8,CP_ACP);
+		LPWSTR_2_UTF8(var_name.bstrVal,nameUTF8);
+		LPWSTR_2_UTF8(var_guid.bstrVal,guidUTF8);
 		LPWSTR_2_UTF8(disp_name,displayNameUTF8);
 
 		printf("%s - %s - %s\n",guidUTF8,nameUTF8,displayNameUTF8);
@@ -611,6 +653,8 @@ vx_source_dshow_create()
 	HRESULT res = CoInitializeEx(NULL,COINIT_MULTITHREADED);
 
 	vx_source_dshow* s = (vx_source_dshow*)malloc(sizeof(vx_source_dshow));
+
+	memset(s,0,sizeof(vx_source_dshow));
 
 	VX_SOURCE_CAST(s)->open = vx_source_dshow_open;
 	VX_SOURCE_CAST(s)->close = vx_source_dshow_close;
