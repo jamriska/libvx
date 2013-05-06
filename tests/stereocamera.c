@@ -1,8 +1,13 @@
 #include <vx/vx.h>
 #include <stdio.h>
 
+#if defined(__APPLE__)
 #define UUID_1 "0xfa1410000ac83420"
 #define UUID_2 "0xfa1440000ac83410"
+#else
+#define UUID_1 "/dev/video0"
+#define UUID_2 "/dev/video1"
+#endif
 
 static void
 frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
@@ -10,7 +15,7 @@ frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 	printf("frame #%ld %dx%d stride: %d datasize:%d (device: 0x%x)\n",frame->frame,
 		   frame->width,frame->height,
 		   frame->stride,frame->dataSize,
-		   (unsigned int)so);
+           (unsigned long)so);
 }
 
 int main(int argc, char** argv)

@@ -77,7 +77,7 @@ int vx_source_v4l2_open(vx_source* s, const char* n)
     printf("%s %s\n",__FUNCTION__,n);
 
     /* open the video device */
-    VX_V4L2_CAST(s)->_fd = v4l2_open(s, O_RDWR | O_NONBLOCK, 0);
+    VX_V4L2_CAST(s)->_fd = v4l2_open(n, O_RDWR | O_NONBLOCK, 0);
 
     /* another check */
     if (VX_V4L2_CAST(s)->_fd < 0)
@@ -237,10 +237,11 @@ int vx_source_v4l2_update(vx_source* s)
 
     /* Timeout. */
     tv.tv_sec = 0;
-    tv.tv_usec = 100;
+    tv.tv_usec = 10;
 
     r = select(VX_V4L2_CAST(s)->_fd + 1, &fds, NULL, NULL, &tv);
 
+    /* basically mean we don't have a new frame */
     if ( (r == -1) && errno == EINTR ) return 0;
 
 
@@ -280,22 +281,6 @@ int vx_source_v4l2_update(vx_source* s)
     VX_V4L2_CAST(s)->frame.colorModel = 0;
 
     _vx_send_frame(s,&VX_V4L2_CAST(s)->frame);
-
-//    // we need a temporary image
-//    IplImage local;
-//    cvInitImageHeader(&local, cvSize(_format.fmt.pix.width,_format.fmt.pix.height), IPL_DEPTH_8U, 3);
-
-//    // set internal frame
-//    cvSetImageData( &local, (unsigned char*)buffers[_buffer.index].start, bytes_per_row );
-
-//    // now perform the conversion
-
-//    //cvCvtColor( &frame, _parent->raw, CV_RGB2BGR );
-//    //cvCopy( &frame, _parent->raw );
-
-
-//    cvCvtColor(&local, _parent->get_image(SSTT_IMAGE_BGR24), CV_RGB2BGR);
-//    cvCvtColor(_parent->get_image(SSTT_IMAGE_BGR24),_parent->get_image(SSTT_IMAGE_GRAY), CV_BGR2GRAY);
 
     // check in the buffer
     xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_QBUF, &VX_V4L2_CAST(s)->_buffer);

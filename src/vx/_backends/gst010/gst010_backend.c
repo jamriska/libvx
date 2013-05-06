@@ -20,8 +20,6 @@ typedef struct vx_source_gstreamer {
 
 	/* GStreamer identity needed for probing */
 	GstElement *probe;
-
-
 } vx_source_gstreamer;
 
 
@@ -42,7 +40,7 @@ bufferProbeCallback(GstPad* pad, GstBuffer* buffer, gpointer user_data) {
 
 	vx_source_gstreamer *vid = (vx_source_gstreamer*)user_data;
 
-	if(vid->source.state != VX_source_STATE_RUNNING)
+    if(vid->source.state != VX_SOURCE_STATE_RUNNING)
 		return TRUE;
 
 	caps = gst_pad_get_negotiated_caps(pad);
@@ -66,19 +64,8 @@ bufferProbeCallback(GstPad* pad, GstBuffer* buffer, gpointer user_data) {
 	probe.data = GST_BUFFER_DATA(buffer);
 	probe.stride = probe.dataSize/probe.height;
 	
-	_vx_send_frame(vid->source,&frame);
+    _vx_send_frame(&vid->source,&probe);
 
-	// vid->_source.context->frameCallback(vid->_source.context,&probe,vid->_source.context->frameCallbackUserData);
-
-//	printf("%s %d\n",__FUNCTION__,__LINE__);
-
-/*
-	if (vid->videoBuffer)
-	{
-		vid->frame++;
-		memcpy(vid->videoBuffer, buffer->data, buffer->size);
-	}
-*/
 	return TRUE;
 
 }
@@ -325,6 +312,13 @@ vx_source_gstreamer_enumerate(vx_source* s,vx_source_description** e)
 {
 	return 0;
 }
+
+int
+vx_source_gstreamer_update(vx_source* s)
+{
+    return 0;
+}
+
 
 
 void*
