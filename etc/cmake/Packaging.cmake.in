@@ -1,0 +1,81 @@
+#
+# CPack template for sstt
+#
+# (c) Copyrights 2008 Hartmut Seichter, HIT Lab NZ
+#
+
+include(InstallRequiredSystemLibraries)
+
+set(CPACK_PACKAGE_NAME "SSTT")
+set(CPACK_PACKAGE_VENDOR "technotecture | studio")
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "SSTT for ${CMAKE_GENERATOR} is an All-In-One package")
+
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README.txt")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.txt")
+
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "SSTT core")
+
+set(CPACK_PACKAGE_EXECUTABLES "simple;SSTT test tool")
+
+
+if(WIN32)
+
+	if (BUILD_APP)
+		file(GLOB OSG_DLLS "${OPENTHREADS_INCLUDE_DIR}/../bin/ot*.dll" "${OSG_INCLUDE_DIR}/../bin/osg*.dll")
+		
+		set(CPACK_PACKAGE_EXECUTABLES "osgsstt;SSTT Target Visualizer")
+		
+
+		SET(CPACK_NSIS_MENU_LINKS
+			"bin/fiducial.bmp" "SSTT fiducial"
+			"http://www.technotecture.com" "technotecture Web Site"
+		)
+
+
+		install(FILES
+			${OSG_DLLS}
+			DESTINATION bin
+			CONFIGURATIONS Release	
+		)
+		
+		file(GLOB_RECURSE PACKAGE_FILES "${CMAKE_SOURCE_DIR}/share/packages/aeron/*.*")
+		
+		install(FILES
+			${PACKAGE_FILES}
+			DESTINATION bin
+			CONFIGURATIONS Release
+		)
+
+		
+		install(DIRECTORY
+			"${OSG_INCLUDE_DIR}/../bin/osgPlugins-2.6.1"
+			DESTINATION bin
+		)
+	endif(BUILD_APP)
+		
+#	install(FILES
+#		"${OPENCV_INCLUDE_DIR}/../bin/cxcore110.dll"
+#		"${OPENCV_INCLUDE_DIR}/../bin/highgui110.dll"
+#		"${OPENCV_INCLUDE_DIR}/../bin/cv110.dll"
+#		DESTINATION bin
+#		CONFIGURATIONS Release
+#	)
+	
+	set(CPACK_NSIS_HELP_LINK "http:\\\\\\\\www.technotecture.com")
+	set(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.technotecture.com")
+	set(CPACK_NSIS_CONTACT "info@technotecture.com")
+ 	set(CPACK_NSIS_DISPLAY_NAME "SSTT Target Lite")
+	
+else(WIN32)
+	if   (APPLE)
+		set(CPACK_GENERATOR "PackageMaker;STGZ")
+		INCLUDE(CPack)
+	endif(APPLE)
+endif(WIN32)	
+	
+include(CPack)
