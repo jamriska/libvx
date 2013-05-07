@@ -34,6 +34,8 @@ either expressed or implied, of the VideoExtractor Project.
 #include <vx/cdecl.h>
 #include <vx/sink.h>
 
+VX_C_DECL_BEGIN
+
 /**
  * @brief The vx_source_state enum
  */
@@ -51,19 +53,31 @@ enum vx_source_state {
  * @brief Update methods
  */
 enum vx_source_update_method {
-    VX_SOURCE_UPDATE_NONE		= 0,        /**< Do nothing */
-    VX_SOURCE_UPDATE_PEEK,                  /**< Only peek */
-    VX_SOURCE_UPDATE_FULL       = 0xff      /**< Taking over processing */
+    VX_SOURCE_UPDATE_NONE		= 0,        /**< do nothing */
+    VX_SOURCE_UPDATE_PEEK,                  /**< only peek */
+    VX_SOURCE_UPDATE_FULL       = 0xff      /**< taking over processing */
 };
 
 
 /**
+ * @brief Type of devices
+ */
+enum vx_device_type {
+    VX_DEVICE_UNKNOWN       = 0,
+    VX_DEVICE_LIVE_VIDEO,
+    VX_DEVICE_LIVE_DEPTH,
+    VX_DEVICE_DECODER,
+    VX_DEVICE_USERDEFINED   = 0xff
+};
+
+/**
   * @brief description of devices
   */
-typedef struct vx_source_description {
+typedef struct vx_device_description {
     char* name;                             /**< UTF-8 encoded display name */
-    char* uuid;                             /**< Platform specific UUID */
-} vx_source_description;
+    char* uuid;                             /**< platform specific UUID */
+    unsigned char deviceType;               /**< type of device */
+} vx_device_description;
 
 
 /**
@@ -82,13 +96,14 @@ VX_API_CALL const char * vx_source_default();
 VX_API_CALL void* vx_source_create(const char *n);
 
 /**
-  * Enumerates devices available in the backend
+  * Enumerates devices available in the backend.
   *
   * @param s source instance
-  * @param e null terminated vector of source descriptions
+  * @param devices array of device descriptions
+  * @param size size of the array returned. If NULL/0L internal structures are reset
   * @return 0 if successful / otherwise error code
   */
-VX_API_CALL int vx_source_enumerate(vx_source *s,vx_source_description** e);
+VX_API_CALL int vx_source_enumerate(vx_source *s, vx_device_description **devices, int *size);
 
 /**
   * Opens the device described on the device
@@ -186,6 +201,8 @@ VX_API_CALL int vx_source_ref(vx_source *s);
   * Decrease the reference counter
   */
 VX_API_CALL int vx_source_unref(vx_source *s);
+
+VX_C_DECL_END
 
 
 #endif

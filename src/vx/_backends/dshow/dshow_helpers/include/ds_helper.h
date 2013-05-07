@@ -59,33 +59,63 @@
 #include <oleauto.h>
 
 
+/**
+ * @brief Helper to convert from wchar to UTF8 or other code pages
+ */
+struct WideCharacterConversion {
 
+    char* multiByte;
+
+    WideCharacterConversion()
+        : multiByte(0)
+    {
+    }
+
+    void destroy()
+    {
+        if (multiByte) {
+            ::free(multiByte);
+            multiByte = 0;
+        }
+    }
+
+    ~WideCharacterConversion()
+    {
+        this->destroy();
+    }
+
+    const char* mb_str() const { return multiByte; }
+
+    const char* operator()(const LPWSTR input,unsigned int encoding = CP_UTF8)
+    {
+        /* get length of input string */
+        int inputLen = lstrlenW( input );
+
+        /* get prospective size of output string */
+        int outputLen =
+            WideCharToMultiByte(encoding,0,
+            input,inputLen,0,0,0,0);
+
+        /* resize output buffer output buffer */
+        char* newBuf = (char*)::realloc(multiByte,(outputLen+1) * sizeof(char));
+
+        if (newBuf) {
+
+            memset(newBuf,0,(outputLen+1)*sizeof(char));
+
+            WideCharToMultiByte(encoding,0,
+                input,inputLen,
+                newBuf,outputLen,0,0);
+
+            multiByte = newBuf;
+        }
+
+        return multiByte;
+    }
+};
 
 
 #define UDSHOW_API inline
-
-void 
-UDSHOW_API LPWSTR_2_UTF8(const LPWSTR wSTR,char* outBuffer,unsigned int encoding = CP_UTF8)
-{
-	int nNameLenUnicode = lstrlenW( wSTR ); 
-
-	int nNameLen = 
-		WideCharToMultiByte(encoding,0,
-		wSTR,nNameLenUnicode,0,0,0,0);
-
-	outBuffer = new char[ nNameLen + 1 ]; 
-
-	WideCharToMultiByte(encoding,0,
-		wSTR,nNameLenUnicode,
-		outBuffer,nNameLen,0,0);
-
-
-	outBuffer[nNameLen] = 0;
-
-
-	printf("%s %s %d\n",__FUNCTION__,outBuffer,nNameLenUnicode);
-
-}
 
 UDSHOW_API
 HRESULT DisplayFilterProperties(IBaseFilter *pFilter, HWND hWnd)
@@ -326,7 +356,7 @@ UDSHOW_API HRESULT GetCaptureDeviceWithUID(IBaseFilter** ppCap, const char* UID)
 
 	pEm->Reset();
 
-	// go through and find first video capture device
+    // go through and find a suitable video capture device
 	while( 1 )
 	{
 		ULONG ulFetched = 0L;
@@ -336,46 +366,33 @@ UDSHOW_API HRESULT GetCaptureDeviceWithUID(IBaseFilter** ppCap, const char* UID)
 		if( hr != S_OK )
 			break;
 
-
 		// get the property bag interface from the moniker
-		//
 		IPropertyBag* pBag;
 		hr = pM->BindToStorage( 0, 0, IID_IPropertyBag, (void**) &pBag );
 
+        // bogus stuff
 		if( hr != S_OK )
 			continue;
 
 		// ask for the readable name
-		//
 		VARIANT var_name;
 		var_name.vt = VT_BSTR;
 		hr = pBag->Read( L"FriendlyName", &var_name, NULL );
 
-		//VARIANT var_guid;
-		//var_guid.vt = VT_BSTR;
-		//hr = pBag->Read( L"UniqueID", &var_guid, NULL );
-		
-#if !defined(__MINGW32__)
-
-		//USES_CONVERSION;
-		//const char* name = COLE2CT(var_name.bstrVal);
-
+        // get the UUID
 		LPOLESTR disp_name;
 		pM->GetDisplayName(NULL,NULL,&disp_name);
 
+        WideCharacterConversion conv;
+        conv(disp_name);
 
-		char *currUID(0);
-
-		LPWSTR_2_UTF8(disp_name,currUID);
-
-		if (currUID && (0 == strcmp(currUID,UID)))
+        // if the UUID is the same we can go ahead
+        if (conv.mb_str() && (0 == strcmp(conv.mb_str(),UID)))
 		{
 			hr = pM->BindToObject( 0, 0, IID_IBaseFilter, (void**) ppCap );
 			hr = S_OK;
 		}
 
-		delete [] currUID;
-#endif
 		pM->Release();
 
 		if (*ppCap) break;

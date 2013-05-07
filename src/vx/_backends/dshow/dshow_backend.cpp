@@ -477,7 +477,7 @@ int vx_source_dshow_get_state(vx_source* s,int* state)
 	return 0;
 }
 
-int vx_source_dshow_enumerate(vx_source* s, vx_source_description **e)
+int vx_source_dshow_enumerate(vx_source* s, vx_device_description **devices,int *size)
 {
 
 #if defined(_WIN32_WCE)
@@ -516,9 +516,7 @@ Cleanup:
 
 #if !defined(_WIN32_WCE) 
 
-	vx_source_description i;
-
-	HRESULT hr						= E_FAIL;
+    HRESULT hr						= E_FAIL;
 	IBaseFilter **ppCap				= NULL;
 	ICreateDevEnum *pCreateDevEnum	= NULL;
 	IEnumMoniker *pEm				= NULL;
@@ -570,61 +568,37 @@ Cleanup:
 			continue;
 
 		// ask for the readable name
-		//
 		VARIANT var_name;
 		var_name.vt = VT_BSTR;
 		hr = pBag->Read( L"FriendlyName", &var_name, NULL );
 
-		VARIANT var_guid;
-		var_guid.vt = VT_BSTR;
-		hr = pBag->Read( L"UniqueID", &var_guid, NULL );
-
-#if !defined(__MINGW32__)
-
-		LPOLESTR disp_name, actualName;
+        LPOLESTR disp_name;
 		pM->GetDisplayName(NULL,NULL,&disp_name);
 
-		vx_source_description i;
+        int newSizeDesc = s->deviceCount + 1;
 
-		char *nameUTF8(0),*displayNameUTF8(0), *guidUTF8(0);
+        vx_device_description* pNewDesc =
+                (vx_device_description*)realloc(s->devices,newSizeDesc * (sizeof(vx_device_description)));
 
-		LPWSTR_2_UTF8(var_name.bstrVal,nameUTF8);
-		LPWSTR_2_UTF8(var_guid.bstrVal,guidUTF8);
-		LPWSTR_2_UTF8(disp_name,displayNameUTF8);
+        if (pNewDesc) {
 
-		printf("%s - %s - %s\n",guidUTF8,nameUTF8,displayNameUTF8);
+            WideCharacterConversion conv;
 
+            pNewDesc[s->deviceCount].name = _strdup(conv(var_name.bstrVal));
+            conv.destroy();
+            pNewDesc[s->deviceCount].uuid = _strdup(conv(disp_name));
+            conv.destroy();
 
-		i.name = _strdup(nameUTF8);
-		i.uuid = _strdup(displayNameUTF8);
-
-
-		delete [] nameUTF8;
-		delete [] guidUTF8;
-		delete [] displayNameUTF8;
-
-#endif
+            s->devices = pNewDesc;
+            s->deviceCount = newSizeDesc;
+        }
 
 		if (hr != S_OK)
 			continue;
 
-		//std::string name =  convert_from_bstr(var.bstrVal);
-
-		//std::clog << "Found: " << name.c_str() << std::endl;
-
-		//hr = pM->BindToObject( 0, 0, IID_IBaseFilter, (void**) ppCap );
-
-		//pM->Release();
-
-		//if( *ppCap )
-		//{
-		//	// std::cout << "Finished" << std::endl;
-		//	break;
-		//}
-
 		if (*ppCap)
 		{
-			//*ppCap->Release();
+            //*ppCap->Release();
 		}
 	}
 
@@ -635,6 +609,11 @@ Cleanup:
 return 0;
 
 #endif
+
+
+    *size = s->deviceCount;
+    *devices = s->devices;
+
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;
 }

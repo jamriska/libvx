@@ -26,21 +26,21 @@ int main(int argc, char** argv)
 
 	vx_source *source_1,*source_2;
 	vx_sink *sink;
-	vx_source_description *d, *dIt;
+    vx_device_description *d, *dIt;
 	int state;
 
 
 	source_1 = vx_source_create(vx_source_default());
 	source_2 = vx_source_create(vx_source_default());
 
-	vx_source_enumerate(source_1,&d);
+//	vx_source_enumerate(source_1,&d);
 
-	dIt = d;
+//	dIt = d;
 
-	while (dIt && dIt->name) {
-		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
-		dIt++;
-	}
+//	while (dIt && dIt->name) {
+//		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
+//		dIt++;
+//	}
 
 	sink = vx_sink_create("context");
 

@@ -34,13 +34,13 @@ int vx_source_null_get_state(vx_source* s,int* state)
 	return 0;
 }
 
-int vx_source_null_enumerate(vx_source* s, vx_source_description **e)
+int vx_source_null_enumerate(vx_source* s, vx_device_description **e,int *size)
 {
     printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;
 }
 
-int vx_source_null_update(vx_source* s)
+int vx_source_null_update(vx_source* s,unsigned int runloop)
 {
     printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;

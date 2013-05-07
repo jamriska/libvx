@@ -33,7 +33,7 @@ either expressed or implied, of the VideoExtractor Project.
 #include "_object.h"
 #include "_sink.h"
 
-typedef int (*vx_source_enumerate_cb_t)(vx_source * s,vx_source_description** e);
+typedef int (*vx_source_enumerate_cb_t)(vx_source * s,vx_device_description** devices,int* size);
 typedef int (*vx_source_open_cb_t)(vx_source * s,const char* n);
 typedef int (*vx_source_close_cb_t)(vx_source * s);
 typedef int (*vx_source_set_state_cb_t)(vx_source * s,int newstate);
@@ -55,6 +55,9 @@ struct vx_source {
 
 	vx_sink* sink;
 	int sinkCount;
+
+    vx_device_description* devices;
+    int deviceCount;
 
 };
 

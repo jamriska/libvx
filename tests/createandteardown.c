@@ -17,23 +17,19 @@ int main(int argc, char** argv)
 
 	vx_source *source;
 	vx_sink *sink;
-	vx_source_description *d, *dIt;
-
-	d = 0; dIt = d;
+    vx_device_description *devices;
+    int deviceCount;
 
 	if (argc > 1)
 		source = vx_source_create(argv[1]);
 	else
 		source = vx_source_create(0);
 
-    vx_source_enumerate(source,&d);
+    vx_source_enumerate(source,&devices,&deviceCount);
 
-//	dIt = d;
-
-//	while (dIt && dIt->name) {
-//		printf("Name: %s - UUID:%s\n",dIt->name,dIt->uuid);
-//		dIt++;
-//	}
+    for (i = 0; i < deviceCount;++i) {
+        printf("Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
+    }
 
 	sink = vx_sink_create("context");
 
