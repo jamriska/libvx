@@ -31,7 +31,7 @@ either expressed or implied, of the VideoExtractor Project.
 
 #include "vx/source.h"
 #include "_object.h"
-#include "_context.h"
+#include "_sink.h"
 
 typedef int (*vx_source_enumerate_cb_t)(vx_source * s,vx_source_description** e);
 typedef int (*vx_source_open_cb_t)(vx_source * s,const char* n);

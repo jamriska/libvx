@@ -31,7 +31,12 @@ either expressed or implied, of the VideoExtractor Project.
 
 #include "vx/vx.h"
 
-int vx_core_init()
+int vx_core_create()
+{
+    return 0;
+}
+
+int vx_core_release()
 {
     return 0;
 }

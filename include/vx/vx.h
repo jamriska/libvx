@@ -29,16 +29,46 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_VX_H_
 #define _LIBVX_VX_H_ 1
 
+/**
+ * @file vx/vx.h
+ *
+ * Main include file. Should be the only header included in an user application.
+ */
+
 #include <vx/cdecl.h>
-#include <vx/context.h>
+#include <vx/sink.h>
 #include <vx/source.h>
 
 VX_C_DECL_BEGIN
 
-VX_API_CALL int vx_core_init();
+/**
+  * Initializes the internal structures and memory managment
+  *
+  * @return error code
+  */
+VX_API_CALL int vx_core_create();
+
+
+/**
+  * Cleans up internal structures
+  *
+  * @return error code
+  */
+VX_API_CALL int vx_core_release();
 
 VX_C_DECL_END
 
 
-
+/*! \mainpage libVX - Video Extractor
+ *
+ * \section intro_sec Introduction
+ *
+ * libVX is a protocol library for retrieving video frames from various sources.
+ *
+ * \section install_sec Installation
+ *
+ * \subsection step1 Step 1: Opening the box
+ *
+ * etc...
+ */
 #endif

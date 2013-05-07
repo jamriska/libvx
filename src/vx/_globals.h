@@ -30,10 +30,17 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_INT_GLOBALS_H_
 #define _LIBVX_INT_GLOBALS_H_ 1
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "vx/config.h"
+
+#if defined(HAVE_STDLIB_H)
+#include <stdlib.h>
+#endif
+#if defined(HAVE_STRING_H)
+#include <string.h>
+#endif
+#if defined(HAVE_STDIO_H)
+#include <stdio.h>
+#endif
+
 
 #endif

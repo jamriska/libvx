@@ -29,8 +29,10 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_VX_SOURCE_H_
 #define _LIBVX_VX_SOURCE_H_ 1
 
+/** @file */
+
 #include <vx/cdecl.h>
-#include <vx/context.h>
+#include <vx/sink.h>
 
 /**
  * @brief The vx_source_state enum
@@ -164,12 +166,12 @@ VX_API_CALL int vx_source_get(vx_source *s,int tag,void* data);
   * @param sink instance of a sink
   * @return error code
   */
-VX_API_CALL int vx_source_add_sink(vx_source* source, vx_sink* c);
+VX_API_CALL int vx_source_add_sink(vx_source* source, vx_sink* sink);
 
 /**
   * Detaches a sink from the source.
   *
-  * @param s instance of a source
+  * @param source instance of a source
   * @param c instance of a sink
   * @return error code
   */

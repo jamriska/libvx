@@ -26,13 +26,13 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the VideoExtractor Project.
 */
-#ifndef _LIBVX_INT_CONTEXT_H_
-#define _LIBVX_INT_CONTEXT_H_ 1
+#ifndef _LIBVX_INT_SINK_H_
+#define _LIBVX_INT_SINK_H_ 1
 
 #include "_object.h"
 
 #include "vx/frame.h"
-#include "vx/context.h"
+#include "vx/sink.h"
 
 struct vx_sink {
 	vx_object _object;

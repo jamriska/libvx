@@ -12,6 +12,7 @@ CHECK_INCLUDE_FILES ("memory.h" HAVE_MEMORY_H)
 CHECK_INCLUDE_FILES ("stdef.h" HAVE_STDDEF_H)
 CHECK_INCLUDE_FILES ("stdint.h" HAVE_STDINT_H)
 CHECK_INCLUDE_FILES ("stdlib.h" HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES ("stdio.h" HAVE_STDIO_H)
 CHECK_INCLUDE_FILES ("string.h" HAVE_STRING_H)
 CHECK_INCLUDE_FILES ("strings.h" HAVE_STRINGS_H)
 CHECK_INCLUDE_FILES ("sys/stat.h" HAVE_SYS_STAT_H)
@@ -22,8 +23,8 @@ CHECK_LIBRARY_EXISTS("m" sin "" HAVE_LIBM)
 
 set(srcs
 	kernel.c
-	context.c
 	source.c
+	sink.c
 	)
 
 file(GLOB internal_hdrs

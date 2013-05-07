@@ -29,9 +29,8 @@ either expressed or implied, of the VideoExtractor Project.
 
 */
 
-#include "_context.h"
-
-#include <stdlib.h>
+#include "_sink.h"
+#include "_globals.h"
 
 vx_sink*
 vx_sink_create(const char *name) {

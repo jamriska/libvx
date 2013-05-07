@@ -29,6 +29,8 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_VX_FRAME_H_
 #define _LIBVX_VX_FRAME_H_ 1
 
+/** @file */
+
 #include <vx/cdecl.h>
 
 VX_C_DECL_BEGIN
@@ -71,7 +73,7 @@ typedef struct vx_frame {
     void* data;                     /**< pointer to the buffer */
 
     unsigned long frame;            /**< frame counter */
-    unsigned long tick;             /**< tick when the buffer was retrieved */
+    unsigned long tick;             /**< timestamp of the buffer */
 
 } vx_frame;
 

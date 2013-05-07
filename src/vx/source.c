@@ -28,7 +28,7 @@ either expressed or implied, of the VideoExtractor Project.
 */
 
 #include "_source.h"
-#include "_context.h"
+#include "_sink.h"
 
 #include "_globals.h"
 
@@ -190,7 +190,7 @@ vx_source_add_sink(vx_source* source, vx_sink* sink)
 
 	if (moreSink)
 	{
-		moreSink[source->sinkCount] = *sink;
+        moreSink[source->sinkCount] = *sink;
 
 		source->sink = moreSink;
 		source->sinkCount = newSize;
