@@ -5,20 +5,15 @@
 
 #if defined(HAVE_DSHOW)
 
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <tchar.h>
+
 #ifndef WINBOOL
 #define WINBOOL BOOL
 #endif
 
-//#include "_missing_idl.h"
-//#include <streams.h>
 #include <Qedit.h>
-#include <tchar.h>
-//#include <atlbase.h>
-//#include <atlcom.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <tchar.h>
 
 #include "ds_helper.h"
 #include "ds_capture.h"
@@ -27,9 +22,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-
 #ifndef SAFE_RELEASE
-#define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
+    #define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
 #endif
 
 
@@ -69,15 +63,18 @@ static int InitFilterGraph(vx_source_dshow* cap)
 		IID_IGraphBuilder, (void**)&cap->_Graph);
 	if (hr != S_OK)
 	{
-		MessageBox(NULL, _T("Creating FilterGraph failed!"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
+        MessageBox(NULL, _T("Creating FilterGraph failed!"),
+                   _T("SSTT Capture"),
+                   MB_OK | MB_ICONEXCLAMATION);
 	} else
 	{
 		// attach the filter graph to the capture graph
 		hr = cap->_GraphBuilder->SetFiltergraph(cap->_Graph);
 		if (FAILED(hr))
 		{
-			MessageBox(NULL, _T("Can't set the filtergraph!"), _T("SSTT Capture"),
-				MB_OK | MB_ICONEXCLAMATION);
+            MessageBox(NULL, _T("Can't set the filtergraph!"),
+                       _T("SSTT Capture"),
+                       MB_OK | MB_ICONEXCLAMATION);
 		}
 	}
 
@@ -102,11 +99,10 @@ int InitGraphBuilder(vx_source_dshow *cap)
 
 	if (hr != S_OK)
 	{
-		MessageBox(NULL, _T("Creating CaptureGraph Builder failed!"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
-	} else {
-
-
-	}
+        MessageBox(NULL, _T("Creating CaptureGraph Builder failed!"),
+                   _T("SSTT Capture"),
+                   MB_OK | MB_ICONEXCLAMATION);
+    }
 
 	return 0;
 }
@@ -115,15 +111,11 @@ int InitGraphBuilder(vx_source_dshow *cap)
 int InitCOM()
 {
 	HRESULT res = CoInitializeEx(NULL,COINIT_MULTITHREADED);
-
 	if (res != S_OK) {
 		fprintf(stderr,"Cannot initialize COM\n");
 	}
-
 	return 0;
 }
-
-
 
 int InitCaptureDevice(vx_source_dshow* cap,const char* uuid) {
 
@@ -137,18 +129,19 @@ int InitCaptureDevice(vx_source_dshow* cap,const char* uuid) {
 	}
 #else
 	if (uuid) {
+        /* use UUID */
 		if (S_OK != GetCaptureDeviceWithUID(&cap->_SourceFilter,uuid)) {
+            /* if that fails try the default */
 			GetCaptureDevice(&cap->_SourceFilter);
 		}
 	} else {
+        /* get default device */
 		GetCaptureDevice(&cap->_SourceFilter);
 	}
 
 #endif
 	return 0;
 }
-
-
 
 int InitRenderer(vx_source_dshow* cap, int renderType = 0)
 {
@@ -190,7 +183,9 @@ int InitRenderer(vx_source_dshow* cap, int renderType = 0)
 
 	if (hr != S_OK)
 	{
-		MessageBox(NULL, _T("Error Initializing Renderer"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
+        MessageBox(NULL, _T("Error Initializing Renderer"),
+                   _T("SSTT Capture"),
+                   MB_OK | MB_ICONEXCLAMATION);
 	}
 
 	hr = cap->_Graph->AddFilter(cap->_SinkFilter,
@@ -200,7 +195,9 @@ int InitRenderer(vx_source_dshow* cap, int renderType = 0)
 	{
 		// \TODO: check reason!
 		// For some reasons this sometimes fails but the video still runs
-		//MessageBox(NULL, _T("Error Adding Sink Filter"), _T("SSTT Capture"), MB_OK | MB_ICONEXCLAMATION);
+        MessageBox(NULL, _T("Error Adding Sink Filter"),
+                   _T("SSTT Capture"),
+                   MB_OK | MB_ICONEXCLAMATION);
 	}
 
 
@@ -643,9 +640,13 @@ return 0;
 }
 
 
-int vx_source_dshow_update(vx_source* s)
+int vx_source_dshow_update(vx_source* s,unsigned int runloop)
 {
-//    printf("%s %d\n",__FUNCTION__,__LINE__);
+    /* might be necessary depending on the application */
+    if (runloop == VX_SOURCE_UPDATE_PEEK) {
+        MSG msg;
+        while(PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {}
+    }
     return 0;
 }
 

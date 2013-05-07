@@ -53,7 +53,7 @@ int main(int argc, char** argv)
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
 			//printf("%d\n",i);
-			vx_source_update(source);
+            vx_source_update(source,VX_SOURCE_UPDATE_PEEK);
 		}
 
 		vx_source_set_state(source,VX_SOURCE_STATE_STOP);

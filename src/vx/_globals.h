@@ -26,3 +26,14 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the VideoExtractor Project.
 */
+
+#ifndef _LIBVX_INT_GLOBALS_H_
+#define _LIBVX_INT_GLOBALS_H_ 1
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
+#include "vx/config.h"
+
+#endif

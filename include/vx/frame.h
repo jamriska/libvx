@@ -33,8 +33,9 @@ either expressed or implied, of the VideoExtractor Project.
 
 VX_C_DECL_BEGIN
 
+/** color model and pixel format of the retrieved frame */
 enum vx_colormodel {
-	VX_E_COLOR_NONE		= 0,
+    VX_E_COLOR_NONE                 = 0,
 	VX_E_COLOR_GRAY8,
 	VX_E_COLOR_RGB24,
 	VX_E_COLOR_BGR24,
@@ -42,29 +43,35 @@ enum vx_colormodel {
 	VX_E_COLOR_RGBA,
 	VX_E_COLOR_ABGR,
 	VX_E_COLOR_BGRA,
-	VX_E_COLOR_YU12
+    VX_E_COLOR_YU12,
+    VX_E_COLOR_USERDEFINED          = 0xFF
 };
 
+/** data type of the retrieved frame */
 enum vx_datatype {
-	VX_E_DATATYPE_NONE		= 0,
-	VX_E_DATATYPE_UCHAR
+    VX_E_DATATYPE_NONE          = 0,
+    VX_E_DATATYPE_UCHAR,
+    VX_E_DATATYPE_FLOAT,
+    VX_E_DATATYPE_USERDEFINED   = 0xFF
 };
 
+
+/** structure for buffer probe */
 typedef struct vx_frame {
-	unsigned int width;
-	unsigned int height;
-	unsigned int stride;
+    unsigned int width;             /**< width of frame in pixel */
+    unsigned int height;            /**< height of frame in pixel */
+    unsigned int stride;            /**< bytes per row */
 
-	int colorModel;
+    int colorModel;                 /**< pixel format and layout */
 
-	int dataType;
-	int dataSize;
-	int owner;
+    int dataType;                   /**< data format of buffer */
+    int dataSize;                   /**< size of the buffer in bytes */
+    int owner;                      /**< should be 0 (backend owns the buffer */
 
-	void* data;
+    void* data;                     /**< pointer to the buffer */
 
-	unsigned long frame;
-	unsigned long tick;
+    unsigned long frame;            /**< frame counter */
+    unsigned long tick;             /**< tick when the buffer was retrieved */
 
 } vx_frame;
 

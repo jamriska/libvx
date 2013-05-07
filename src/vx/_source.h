@@ -38,7 +38,7 @@ typedef int (*vx_source_open_cb_t)(vx_source * s,const char* n);
 typedef int (*vx_source_close_cb_t)(vx_source * s);
 typedef int (*vx_source_set_state_cb_t)(vx_source * s,int newstate);
 typedef int (*vx_source_get_state_cb_t)(vx_source * s,int *state);
-typedef int (*vx_source_update_cb_t)(vx_source * s);
+typedef int (*vx_source_update_cb_t)(vx_source * s,unsigned int runloop);
 
 struct vx_source {
 

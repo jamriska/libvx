@@ -68,8 +68,8 @@ int main(int argc, char** argv)
 
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
-			vx_source_update(source_1);
-            vx_source_update(source_2);
+            vx_source_update(source_1,VX_SOURCE_UPDATE_NONE);
+            vx_source_update(source_2,VX_SOURCE_UPDATE_NONE);
 		}
 
 		vx_source_set_state(source_1,VX_SOURCE_STATE_STOP);
