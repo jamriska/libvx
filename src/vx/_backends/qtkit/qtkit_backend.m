@@ -6,12 +6,9 @@
 #include "_source.h"
 #include "vx/frame.h"
 
-#import <Cocoa/Cocoa.h>
 #import <QTKit/QTkit.h>
 
-
 /* delegate for receiving the buffer samples - acts as a holder for the session */
-
 @interface VXvideoController : NSObject
 {
 	QTCaptureSession *session;
@@ -202,7 +199,7 @@ typedef struct vx_source_qtkit {
 	((vx_source_qtkit*)(ptr))
 
 
-int vx_source_qtkit_enumerate(vx_source* s,vx_source_description** e)
+int vx_source_qtkit_enumerate(vx_source* s,vx_device_description** e,int *size)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
@@ -210,24 +207,22 @@ int vx_source_qtkit_enumerate(vx_source* s,vx_source_description** e)
 
 	if ([devices count] > 0)
 	{
-
-		size_t size = [devices count] + 1;
-		*e = malloc(sizeof(vx_source_description) * size);
-
-		vx_source_description* arr = *e;
+		s->deviceCount = [devices count];
+		s->devices = malloc(sizeof(vx_device_description) * s->deviceCount);
 
 		int i = 0;
 		for (QTCaptureDevice *device in devices) {
 
-			arr[i].name = strdup([[device localizedDisplayName] UTF8String]);
-			arr[i].uuid = strdup([[device uniqueID] UTF8String]);
-//			NSLog(@"Device %@ %@",[device localizedName],[device uniqueID]);
+			s->devices[i].name = strdup([[device localizedDisplayName] UTF8String]);
+			s->devices[i].uuid = strdup([[device uniqueID] UTF8String]);
+//			NSLog(@"Device %@ %@",[device localizedDisplayName],[device uniqueID]);
 			i++;
 		}
 
-		arr[i].name = 0;
-		arr[i].uuid = 0;
+		*size = s->deviceCount;
+		*e = s->devices;
 	}
+
 
 	[pool drain];
 
@@ -243,6 +238,7 @@ int vx_source_qtkit_open(vx_source* s, const char* n)
 	VXvideoController* delegate = [[VXvideoController alloc] init:s];
 	VX_QTKIT_CAST(s)->delegate = delegate;
 
+	/* use an empty UUID to trigger default behavior */
 	NSString* uuid = (n) ?  [NSString stringWithUTF8String:n] : @"";
 
 	if ([delegate open:uuid]) {
@@ -255,18 +251,23 @@ int vx_source_qtkit_open(vx_source* s, const char* n)
 	return retCode;
 }
 
-int vx_source_qtkit_update(vx_source* s)
+int vx_source_qtkit_update(vx_source* s,unsigned int runloop)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	int needRunLoop = 1;
-
-	if (needRunLoop) {
+	switch (runloop) {
+	case VX_SOURCE_UPDATE_PEEK:
+	{
 		NSDate *loopUntil = [NSDate dateWithTimeIntervalSinceNow:0.005];
 		[[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
 			beforeDate:loopUntil];
-	} else {
+	}
+	break;
+	case VX_SOURCE_UPDATE_FULL:
 		[[NSRunLoop currentRunLoop] runUntilDate:nil];
+		break;
+	default:
+		break;
 	}
 
 	[pool release];

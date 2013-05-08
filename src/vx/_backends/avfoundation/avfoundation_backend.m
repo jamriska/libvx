@@ -163,31 +163,29 @@ typedef struct vx_source_avfoundation {
 } vx_source_avfoundation;
 
 
-int vx_source_avfoundation_enumerate(vx_source* s,vx_source_description** e)
+int vx_source_avfoundation_enumerate(vx_source* s,vx_device_description** devices,int *size)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	//AVMediaTypeVideo
-	NSArray* devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-	if ([devices count] > 0)
+	NSArray* avdevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+	if ([avdevices count] > 0)
 	{
 
-		size_t size = [devices count] + 1;
-		*e = malloc(sizeof(vx_source_description) * size);
-
-		vx_source_description* arr = *e;
+		s->deviceCount = [avdevices count];
+		s->devices = malloc(sizeof(vx_device_description) * s->deviceCount);
 
 		int i = 0;
-		for (AVCaptureDevice *device in devices) {
+		for (AVCaptureDevice *avdevice in avdevices) {
 
-			arr[i].name = strdup([[device localizedName] UTF8String]);
-			arr[i].uuid = strdup([[device uniqueID] UTF8String]);
+			s->devices[i].name = strdup([[avdevice localizedName] UTF8String]);
+			s->devices[i].uuid = strdup([[avdevice uniqueID] UTF8String]);
 //			NSLog(@"Device %@ %@",[device localizedName],[device uniqueID]);
 			i++;
 		}
-
-		arr[i].name = 0;
-		arr[i].uuid = 0;
 	}
+
+	*devices = s->devices;
+	*size = s->deviceCount;
 
 	[pool drain];
 
@@ -215,18 +213,23 @@ int vx_source_avfoundation_open(vx_source* s, const char* n)
 	return retCode;
 }
 
-int vx_source_avfoundation_update(vx_source* s)
+int vx_source_avfoundation_update(vx_source* s,unsigned int runloop)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
-	int needRunLoop = 1;
-
-	if (needRunLoop) {
+	switch (runloop) {
+	case VX_SOURCE_UPDATE_PEEK:
+	{
 		NSDate *loopUntil = [NSDate dateWithTimeIntervalSinceNow:0.005];
 		[[NSRunLoop currentRunLoop] runMode: NSDefaultRunLoopMode
 			beforeDate:loopUntil];
-	} else {
+	}
+	break;
+	case VX_SOURCE_UPDATE_FULL:
 		[[NSRunLoop currentRunLoop] runUntilDate:nil];
+		break;
+	default:
+		break;
 	}
 
 	[pool release];

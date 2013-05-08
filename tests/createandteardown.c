@@ -17,19 +17,19 @@ int main(int argc, char** argv)
 
 	vx_source *source;
 	vx_sink *sink;
-    vx_device_description *devices;
-    int deviceCount;
+	vx_device_description *devices;
+	int deviceCount;
 
 	if (argc > 1)
 		source = vx_source_create(argv[1]);
 	else
 		source = vx_source_create(0);
 
-    vx_source_enumerate(source,&devices,&deviceCount);
+	vx_source_enumerate(source,&devices,&deviceCount);
 
-    for (i = 0; i < deviceCount;++i) {
-        printf("Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
-    }
+	for (i = 0; i < deviceCount;++i) {
+		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
+	}
 
 	sink = vx_sink_create("context");
 
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
 
 //	vx_sink_unref(sink);
 
-    if (vx_source_open(source,"blash") == 0)
+	if (vx_source_open(source,devices[0].uuid) == 0)
 	{
 		vx_source_add_sink(source,sink);
 
@@ -49,7 +49,7 @@ int main(int argc, char** argv)
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
 			//printf("%d\n",i);
-            vx_source_update(source,VX_SOURCE_UPDATE_PEEK);
+			vx_source_update(source,VX_SOURCE_UPDATE_PEEK);
 		}
 
 		vx_source_set_state(source,VX_SOURCE_STATE_STOP);

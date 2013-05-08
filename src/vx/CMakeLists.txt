@@ -30,8 +30,8 @@ set(srcs
 file(GLOB internal_hdrs
 	"_*.h"
 	)
-	
-	
+
+
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS -D_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1)
 endif()
@@ -65,6 +65,8 @@ set(backend_srcs
 	_backends/null/null_backend.h
 	_backends/v4l2/v4l2_backend.c
 	_backends/v4l2/v4l2_backend.h
+	_backends/dshow/dshow_backend.cpp
+	_backends/dshow/dshow_backend.h
 	)
 
 set(backend_libs)
@@ -128,19 +130,19 @@ endif()
 #
 find_package(V4L2)
 if(V4L2_FOUND)
-    set(HAVE_V4L2 1)
-    message(STATUS "V4L2: YES")
+	set(HAVE_V4L2 1)
+	message(STATUS "V4L2: YES")
 
-    list(APPEND backend_srcs
+	list(APPEND backend_srcs
 			)
 
-    list(APPEND backend_libs ${LIBV4L2_LIBRARIES} rt)
+	list(APPEND backend_libs ${LIBV4L2_LIBRARIES} rt)
 
 else()
-    message(STATUS "V4L2: NO")
+	message(STATUS "V4L2: NO")
 endif()
 
-# 
+#
 # DirectShow can be found on Windows and Windows Mobile
 #
 set(DSHOW_HELPER_DIR _backends/dshow/dshow_helpers)
@@ -150,20 +152,18 @@ if(DIRECTSHOW_FOUND)
 	set(HAVE_DSHOW 1)
 
 	include_directories(${DIRECTSHOW_INCLUDE_DIRS})
-   
-    list(APPEND backend_srcs
-            _backends/dshow/dshow_backend.cpp
-            _backends/dshow/dshow_backend.h
+
+	list(APPEND backend_srcs
 			_backends/dshow/dshow_helpers/src/ds_capture.cpp
 			_backends/dshow/dshow_helpers/src/cpropertybag.cpp
-            )
+			)
 
-    list(APPEND backend_libs ${DIRECTSHOW_LIBRARIES})
+	list(APPEND backend_libs ${DIRECTSHOW_LIBRARIES})
 
 else()
    message(STATUS "DirectShow: NO")
 
-endif() 
+endif()
 
 #
 # GStreamer can be found on Linux, Mac and Windows
@@ -200,7 +200,7 @@ configure_file(
 	${CMAKE_BINARY_DIR}/include/vx/config.h
 	)
 
-add_library(vx 
+add_library(vx
 	${VX_LIBRARY_TARGET} ${srcs} ${hdrs} ${internal_hdrs} ${backend_srcs} ${misc} ${CMAKE_BINARY_DIR}/include/vx/config.h)
 
 target_link_libraries(vx ${backend_libs})
