@@ -1,5 +1,4 @@
 
-
 #include <vx/vx.h>
 #include <stdio.h>
 
@@ -26,6 +25,9 @@ int main(int argc, char** argv)
 		source = vx_source_create(0);
 
 	vx_source_enumerate(source,&devices,&deviceCount);
+
+    if (deviceCount == 0)
+        return -1;
 
 	for (i = 0; i < deviceCount;++i) {
 		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);

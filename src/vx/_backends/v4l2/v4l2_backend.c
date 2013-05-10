@@ -14,6 +14,8 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <linux/videodev2.h>
+#include <glob.h>
+
 //#include <libv4l2.h>
 
 
@@ -214,16 +216,77 @@ int vx_source_v4l2_get_state(vx_source* s,int* state)
     return 0;
 }
 
-int vx_source_v4l2_enumerate(vx_source* s, vx_source_description **e)
+int vx_source_v4l2_enumerate(vx_source* s, vx_device_description **e, int *size)
 {
+    glob_t globr;
+    int i = 0;
 
-    *e = 0L;
+    glob("/dev/video*",0,0,&globr);
+
+    for (i = 0;i < globr.gl_pathc;++i) {
+
+        printf("Path %s\n",globr.gl_pathv[i]);
+
+        int fd = open(globr.gl_pathv[i],O_RDWR);
+
+        if (fd < 0)
+            continue;
+
+        struct v4l2_input device;
+        memset(&device,0,sizeof(struct v4l2_input));
+
+        while(ioctl(fd,VIDIOC_ENUMINPUT,&device) >= 0) {
+
+            if (device.type == 0 || device.type == V4L2_INPUT_TYPE_CAMERA) {
+                if (ioctl(fd,VIDIOC_S_INPUT,device.index) != 0) {
+
+
+                    int newSizeDesc = s->deviceCount + 1;
+
+                    vx_device_description* pNewDesc =
+                            (vx_device_description*)realloc(s->devices,
+                                                            newSizeDesc * (sizeof(vx_device_description)));
+
+                    if (pNewDesc) {
+
+                        struct v4l2_capability cap;
+                        memset(&cap,0,sizeof(struct v4l2_capability));
+
+                        if (ioctl(fd,VIDIOC_QUERYCAP,&cap) != 0) {
+                            pNewDesc[s->deviceCount].name = strdup(globr.gl_pathv[i]);
+                        } else {
+                            pNewDesc[s->deviceCount].name = strdup(cap.card);
+                        }
+
+                        pNewDesc[s->deviceCount].uuid = strdup(globr.gl_pathv[i]);
+
+                       s->devices = pNewDesc;
+                       s->deviceCount++;
+
+                    }
+                }
+            }
+
+            ++device.index;
+
+        }
+
+        close(fd);
+
+    }
+
+    globfree(&globr);
+
+    *e = s->devices;
+    *size = s->deviceCount;
+
+
 
     printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;
 }
 
-int vx_source_v4l2_update(vx_source* s)
+int vx_source_v4l2_update(vx_source* s,int runloop)
 {
 
     fd_set fds;
