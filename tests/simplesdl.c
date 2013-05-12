@@ -1,3 +1,5 @@
+
+
 /* include standard libs */
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,18 +13,36 @@
 SDL_Surface *screen;
 vx_source *source;
 vx_sink *sink;
-vx_device_description *devices;
-int deviceCount;
 
 
 void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, void *userdata)
 {
+	unsigned long mask[4];
+	mask[0]=mask[1]=mask[2]=mask[3]=0;
+
+	switch (frame->colorModel) {
+	case VX_E_COLOR_RGB24:
+		mask[0]=0x0000ff;
+		mask[1]=0x00ff00;
+		mask[2]=0xff0000,
+		mask[3]=0x000000;
+		break;
+	case VX_E_COLOR_ARGB:
+		mask[0]=0x0000ff00;
+		mask[1]=0x00ff0000;
+		mask[2]=0xff000000,
+		mask[3]=0x000000ff;
+		break;
+	default:
+		fprintf(stderr,"Unhandled format %d\n",frame->colorModel);
+	}
+
 
 	SDL_Surface* videoImage =
 			SDL_CreateRGBSurfaceFrom(frame->data,
 									 frame->width, frame->height,
-									 24,frame->stride,
-									 0,0,0,0);
+									 frame->bpp,frame->stride,
+									 mask[0],mask[1],mask[2],mask[3]);
 	SDL_Rect dest;
 	dest.x = 0;
 	dest.y = 0;
@@ -70,10 +90,12 @@ void sdlInit()
 
 void vxInit()
 {
+	vx_device_description *devices;
+	int deviceCount;
 
 	int i;
 
-	source = vx_source_create(0);
+	source = vx_source_create("qtkit");
 
 	vx_source_enumerate(source,&devices,&deviceCount);
 
@@ -112,8 +134,6 @@ int main(int argc, char *argv[])
 
 		vx_source_update(source,VX_SOURCE_UPDATE_NONE);
 
-//		sdlRender();
-
 		while (SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -126,11 +146,13 @@ int main(int argc, char *argv[])
 					return 0;
 				break;
 			case SDL_QUIT:
-				return(0);
+				vx_source_set_state(source,VX_SOURCE_STATE_STOP);
+				goto cleanup;
 			}
 		}
 	}
 
+cleanup:
 
 	vx_sink_destroy(&sink);
 

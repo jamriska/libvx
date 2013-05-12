@@ -91,24 +91,30 @@
 		switch (pixFormat) {
 		case kCVPixelFormatType_32ARGB:
 			frame.colorModel = VX_E_COLOR_ARGB;
+			frame.bpp = 32;
 			break;
 		case kCVPixelFormatType_32ABGR:
 			frame.colorModel = VX_E_COLOR_ABGR;
+			frame.bpp = 32;
 			break;
 		case kCVPixelFormatType_32RGBA:
 			frame.colorModel = VX_E_COLOR_RGBA;
 			break;
 		case kCVPixelFormatType_32BGRA:
 			frame.colorModel = VX_E_COLOR_BGRA;
+			frame.bpp = 32;
 			break;
 		case kCVPixelFormatType_24RGB:
 			frame.colorModel = VX_E_COLOR_RGB24;
+			frame.bpp = 24;
 			break;
 		case kCVPixelFormatType_24BGR:
 			frame.colorModel = VX_E_COLOR_BGR24;
+			frame.bpp = 24;
 			break;
 		case kCVPixelFormatType_422YpCbCr8_yuvs:
 			frame.colorModel = VX_E_COLOR_YU12;
+			frame.bpp = 24;
 			break;
 		default:
 			{
@@ -203,7 +209,7 @@ typedef struct vx_source_avfoundation {
 } vx_source_avfoundation;
 
 
-int vx_source_avfoundation_enumerate(vx_source* s,vx_device_description** devices,int *size)
+int vx_source_avfoundation_enumerate(vx_source* s)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 	//AVMediaTypeVideo
@@ -223,9 +229,6 @@ int vx_source_avfoundation_enumerate(vx_source* s,vx_device_description** device
 			i++;
 		}
 	}
-
-	*devices = s->devices;
-	*size = s->deviceCount;
 
 	[pool drain];
 

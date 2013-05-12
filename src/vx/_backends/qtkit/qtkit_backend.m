@@ -163,12 +163,15 @@
 	switch(formatType) {
 	case k24BGRPixelFormat:
 		frame.colorModel = VX_E_COLOR_BGR24;
+		frame.bpp = 24;
 		break;
 	case k24RGBPixelFormat:
 		frame.colorModel = VX_E_COLOR_RGB24;
+		frame.bpp = 24;
 		break;
 	case k32ARGBPixelFormat:
 		frame.colorModel = VX_E_COLOR_ARGB;
+		frame.bpp = 32;
 		break;
 	default:
 		memcpy(fourCC,(const void*)&formatType,sizeof(OSType));
@@ -199,7 +202,7 @@ typedef struct vx_source_qtkit {
 	((vx_source_qtkit*)(ptr))
 
 
-int vx_source_qtkit_enumerate(vx_source* s,vx_device_description** e,int *size)
+int vx_source_qtkit_enumerate(vx_source* s)
 {
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
@@ -218,11 +221,7 @@ int vx_source_qtkit_enumerate(vx_source* s,vx_device_description** e,int *size)
 //			NSLog(@"Device %@ %@",[device localizedDisplayName],[device uniqueID]);
 			i++;
 		}
-
-		*size = s->deviceCount;
-		*e = s->devices;
 	}
-
 
 	[pool drain];
 
