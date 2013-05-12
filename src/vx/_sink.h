@@ -34,12 +34,30 @@ either expressed or implied, of the VideoExtractor Project.
 #include "vx/frame.h"
 #include "vx/sink.h"
 
-struct vx_sink {
-	vx_object _object;
 
+typedef void (*vx_copy_cb_t)
+	(vx_source* source, vx_sink* sink, const vx_frame* f);
+
+
+struct vx_sink {
+	vx_object super;
+
+	vx_frame buffer;
+
+	char* name;
+	unsigned char sinkType;
+
+	vx_copy_cb_t copyCallback;
 	vx_frame_cb_t frameCallback;
+
 	void* frameCallbackUserData;
-} ;
+
+} _vx_sink;
+
+#define VX_SINK_CAST(ptr) \
+	((vx_sink*)ptr)
+
+
 
 
 #endif

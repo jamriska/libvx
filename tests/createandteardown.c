@@ -26,14 +26,14 @@ int main(int argc, char** argv)
 
 	vx_source_enumerate(source,&devices,&deviceCount);
 
-    if (deviceCount == 0)
-        return -1;
+	if (deviceCount == 0)
+		return -1;
 
 	for (i = 0; i < deviceCount;++i) {
 		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
 	}
 
-	sink = vx_sink_create("context");
+	sink = vx_sink_create("context",VX_SINK_TYPE_DIRECT);
 
 	vx_sink_ref(sink);
 

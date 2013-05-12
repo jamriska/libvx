@@ -17,7 +17,7 @@ frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 	printf("frame #%ld %dx%d stride: %d datasize:%d (device: 0x%x)\n",frame->frame,
 		   frame->width,frame->height,
 		   frame->stride,frame->dataSize,
-           (unsigned long)so);
+		   (unsigned long)so);
 }
 
 int main(int argc, char** argv)
@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 
 	vx_source *source_1,*source_2;
 	vx_sink *sink;
-    vx_device_description *d, *dIt;
+	vx_device_description *d, *dIt;
 	int state;
 
 
@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 //		dIt++;
 //	}
 
-	sink = vx_sink_create("context");
+	sink = vx_sink_create("context",VX_SINK_TYPE_DIRECT);
 
 	vx_sink_ref(sink);
 
@@ -68,8 +68,8 @@ int main(int argc, char** argv)
 
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
-            vx_source_update(source_1,VX_SOURCE_UPDATE_NONE);
-            vx_source_update(source_2,VX_SOURCE_UPDATE_NONE);
+			vx_source_update(source_1,VX_SOURCE_UPDATE_NONE);
+			vx_source_update(source_2,VX_SOURCE_UPDATE_NONE);
 		}
 
 		vx_source_set_state(source_1,VX_SOURCE_STATE_STOP);

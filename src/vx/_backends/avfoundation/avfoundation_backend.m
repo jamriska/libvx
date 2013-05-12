@@ -77,20 +77,57 @@
 	NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
 
 	CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-	CVPixelBufferLockBaseAddress(imageBuffer,0);
 
+	if (kCVReturnSuccess == CVPixelBufferLockBaseAddress(imageBuffer,0)) {
+		frame.frame++;
+		frame.data = CVPixelBufferGetBaseAddress(imageBuffer);
+		frame.stride = CVPixelBufferGetBytesPerRow(imageBuffer);
+		frame.width = CVPixelBufferGetWidth(imageBuffer);
+		frame.height = CVPixelBufferGetHeight(imageBuffer);
+		frame.dataSize = CVPixelBufferGetDataSize(imageBuffer);
 
-	frame.frame++;
-	frame.data = CVPixelBufferGetBaseAddress(imageBuffer);
-	frame.stride = CVPixelBufferGetBytesPerRow(imageBuffer);
-	frame.width = CVPixelBufferGetWidth(imageBuffer);
-	frame.height = CVPixelBufferGetHeight(imageBuffer);
-	frame.colorModel = VX_E_COLOR_BGRA;
-	frame.dataSize = CVPixelBufferGetDataSize(imageBuffer);
+		OSType pixFormat = CVPixelBufferGetPixelFormatType(imageBuffer);
 
-	_vx_send_frame(source,&frame);
+		switch (pixFormat) {
+		case kCVPixelFormatType_32ARGB:
+			frame.colorModel = VX_E_COLOR_ARGB;
+			break;
+		case kCVPixelFormatType_32ABGR:
+			frame.colorModel = VX_E_COLOR_ABGR;
+			break;
+		case kCVPixelFormatType_32RGBA:
+			frame.colorModel = VX_E_COLOR_RGBA;
+			break;
+		case kCVPixelFormatType_32BGRA:
+			frame.colorModel = VX_E_COLOR_BGRA;
+			break;
+		case kCVPixelFormatType_24RGB:
+			frame.colorModel = VX_E_COLOR_RGB24;
+			break;
+		case kCVPixelFormatType_24BGR:
+			frame.colorModel = VX_E_COLOR_BGR24;
+			break;
+		case kCVPixelFormatType_422YpCbCr8_yuvs:
+			frame.colorModel = VX_E_COLOR_YU12;
+			break;
+		default:
+			{
+			   char formatStr[5];
+			   int i;
+			   for(i=0; i<4; i++ )
+				   formatStr[i] = ((char*)&pixFormat)[3-i];
+			   formatStr[4]=0;
+				NSLog(@"Unhandled format '%s'",formatStr);
+			}
+		}
 
-	CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+		_vx_send_frame(source,&frame);
+
+		CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+
+	}
+
+	_vx_broadcast(source);
 
 	[pool drain];
 }
@@ -132,7 +169,7 @@
 	dispatch_release(aQueue);
 
 	NSDictionary *settings = [NSDictionary dictionaryWithObject:
-		 [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]
+		 [NSNumber numberWithUnsignedInt:kCVPixelFormatType_24RGB]
 		  forKey:(NSString *)kCVPixelBufferPixelFormatTypeKey ];
 
 	[session beginConfiguration];
@@ -146,6 +183,9 @@
 	[session commitConfiguration];
 
 	[device unlockForConfiguration];
+
+
+	frame.frame = 0;
 
 	[pool drain];
 

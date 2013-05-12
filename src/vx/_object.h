@@ -30,12 +30,19 @@ either expressed or implied, of the VideoExtractor Project.
 #define _LIBVX_INT_OBJECT_H_ 1
 
 
+typedef struct vx_object vx_object;
+
+typedef void (*vx_destroy_func)(vx_object*);
+
 typedef struct vx_object {
 	int id;
 	int refCount;
-} vx_object;
 
-#define VX_OBJECT(ptr) \
+	vx_destroy_func destroy;
+
+} _vx_object;
+
+#define VX_OBJECT_CAST(ptr) \
 	((vx_object*)ptr)
 
 

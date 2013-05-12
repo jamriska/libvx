@@ -53,13 +53,13 @@ struct vx_source {
 
 	int state;
 
-	vx_sink* sink;
+	vx_sink** sinks;
 	int sinkCount;
 
-    vx_device_description* devices;
-    int deviceCount;
+	vx_device_description* devices;
+	int deviceCount;
 
-};
+} _vx_source;
 
 #if defined (__cplusplus)
 #define VX_CALL_C extern "C"
@@ -71,8 +71,12 @@ struct vx_source {
 #define VX_SOURCE_CAST(ptr) \
 	((vx_source*)(ptr))
 
+
+/* internal callbacks to copy and to broadcast frames */
+
 VX_CALL_C int _vx_send_frame(vx_source* source, const vx_frame* frame);
 
+VX_CALL_C int _vx_broadcast(vx_source* source);
 
 
 
