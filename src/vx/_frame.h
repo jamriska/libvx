@@ -50,4 +50,8 @@ void _vx_frame_create_header(int w, int h,unsigned int fourCC,vx_frame* frame);
  */
 void _vx_frame_create(int w, int h,unsigned int fourCC,vx_frame* frame);
 
+
+void _vx_frame_draw_rectangle(int x, int y, int w, int h,
+							  int r, int g, int b, int a,
+							  vx_frame* frame);
 #endif

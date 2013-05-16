@@ -17,7 +17,7 @@ vx_sink *sink;
 
 void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, void *userdata)
 {
-	unsigned int mask[4];
+	Uint32 mask[4];
 	mask[0]=mask[1]=mask[2]=mask[3]=0;
 
 	switch (frame->colorModel) {
@@ -39,6 +39,18 @@ void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, 
 		mask[2]=0xff000000,
 		mask[3]=0x000000ff;
 		break;
+	case VX_E_COLOR_RGBA:
+		mask[0]=0x00000000;
+		mask[1]=0x00000000;
+		mask[2]=0x00000000,
+		mask[3]=0x000000FF;
+		break;
+	case VX_E_COLOR_BGRA:
+		mask[0]=0xFF0000;
+		mask[1]=0x00FF00;
+		mask[2]=0x0000FF,
+		mask[3]=0x000000FF;
+		break;
 	default:
     {
         char fourCC[5]; fourCC[4] = '\0';
@@ -48,36 +60,24 @@ void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, 
     }
 	}
 
-
-//    if (frame->data == 0) return;
-
 	SDL_Surface* videoImage =
 			SDL_CreateRGBSurfaceFrom(frame->data,
 									 frame->width, frame->height,
 									 frame->bpp,frame->stride,
 									 mask[0],mask[1],mask[2],mask[3]);
+	SDL_Rect dest;
+	dest.x = 0;
+	dest.y = 0;
+	dest.w = videoImage->w;
+	dest.h = videoImage->h;
 
-//    if (0 == SDL_LockSurface(screen)) {
+	SDL_FillRect(screen, 0, SDL_MapRGBA(screen->format, 0, 0, 0, 0));
 
-        SDL_Rect dest;
-        dest.x = 0;
-        dest.y = 0;
-        dest.w = videoImage->w;
-        dest.h = videoImage->h;
-
-        SDL_FillRect(screen, 0, SDL_MapRGBA(screen->format, 0, 0, 0, 0));
-
-        // blit the image onto the screen
-        if (0 != SDL_BlitSurface(videoImage, 0, screen, 0))
-            fprintf(stderr,"Can't blit!\n");
-
-//        SDL_UnlockSurface(screen);
-
-//    }
-
+	// blit the image onto the screen
+	if (0 != SDL_BlitSurface(videoImage, 0, screen, 0))
+		fprintf(stderr,"Can't blit!\n");
 
     SDL_Flip(screen);
-
 
 	SDL_FreeSurface(videoImage);
 

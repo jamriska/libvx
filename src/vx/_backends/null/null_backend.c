@@ -76,24 +76,29 @@ int vx_source_null_update(vx_source* s,unsigned int runloop)
 		printf("%s %d\n",__FUNCTION__,__LINE__);
 
 		int w = 640;
-        int h = 480;
+		int h = 480;
 
-		_vx_frame_create(w,h,VX_E_COLOR_RGB24,&null->fakeFrame);
+		_vx_frame_create(w,h,VX_E_COLOR_RGBA,&null->fakeFrame);
 
-        unsigned char* data = null->fakeFrame.data;
+		char* data = null->fakeFrame.data;
 
 		int i;
 		for (    i = 0; i < null->fakeFrame.dataSize; ++i )				{
 			data[i] = 0xCC;
 		}
 
-		int border = 20;
+		_vx_frame_draw_rectangle(10,h/2-5,10,10,0xFF,0x00,0x00,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(30,h/2-5,10,10,0x00,0xFF,0x00,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(50,h/2-5,10,10,0x00,0x00,0xFF,0xFF,&null->fakeFrame);
 
-		int j = 0;
-		for (    i = border; i < w-border; ++i )						for (    j = border; j < h-border; ++j )						{
-			data[j*w+i] = 0xFF;
-		}
-    }
+		_vx_frame_draw_rectangle(0,h-30,w,10,0xFF,0x00,0x00,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(0,h-20,w,10,0x00,0xFF,0x00,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(0,h-10,w,10,0x00,0x00,0xFF,0xFF,&null->fakeFrame);
+
+		_vx_frame_draw_rectangle(0,20,w,10,0xFF,0xFF,0xFF,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(0,10,w,10,0xAA,0xAA,0xAA,0xFF,&null->fakeFrame);
+		_vx_frame_draw_rectangle(0, 0,w,10,0x33,0x33,0x33,0xFF,&null->fakeFrame);
+	}
 	return 0;
 }
 
