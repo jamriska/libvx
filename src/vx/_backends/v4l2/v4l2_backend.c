@@ -16,19 +16,7 @@
 #include <linux/videodev2.h>
 #include <glob.h>
 
-//#include <libv4l2.h>
-
-
-struct buffer {
-        void   *start;
-        size_t length;
-};
-
-#define MAX_V4L_BUFFERS 10
-#define DEFAULT_V4L_BUFFERS 4
-
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
-
+#define V4L_BUFFERS_COUNT 4
 
 typedef struct vx_source_v4l2 {
 
@@ -37,16 +25,13 @@ typedef struct vx_source_v4l2 {
     int _fd;
     unsigned int _type;
 
-
-//    int _flipcontrol;
-
     struct v4l2_format _format;
     struct v4l2_buffer _buffer;
     struct v4l2_control _control;
     struct v4l2_requestbuffers _requestbuffers;
 
-//    v4l2_buf_type _buf_type;
-    struct buffer buffers[MAX_V4L_BUFFERS + 1];
+    void* memAddress[V4L_BUFFERS_COUNT];
+
     int _bufferIndex;
 
     vx_frame frame;
@@ -56,58 +41,48 @@ typedef struct vx_source_v4l2 {
 
 /* helpers */
 #define VX_V4L2_CAST(ptr) \
-    ((vx_source_v4l2*)(ptr))
+    ((struct vx_source_v4l2*)(ptr))
 
-
-
-static int xioctl(int fh, int request, void *arg)
-{
-        int r;
-
-        do {
-                r = v4l2_ioctl(fh, request, arg);
-        } while (r == -1 && ((errno == EINTR) || (errno == EAGAIN)));
-
-        if (r == -1) {
-                fprintf(stderr, "error %d, %s\n", errno, strerror(errno));
-                return -1;
-        }
-}
 
 int vx_source_v4l2_open(vx_source* s, const char* n)
 {
-    printf("%s %s\n",__FUNCTION__,n);
+
+    struct vx_source_v4l2 *source = VX_V4L2_CAST(s);
+    int i = 0;
+
+
+    source->frame.frame = 0;
 
     /* open the video device */
-    VX_V4L2_CAST(s)->_fd = v4l2_open(n, O_RDWR | O_NONBLOCK, 0);
+    source->_fd = v4l2_open(n, O_RDWR|O_NONBLOCK, 0);
 
     /* another check */
-    if (VX_V4L2_CAST(s)->_fd < 0)
+    if (source->_fd < 0)
         return -1;
 
     // request a format
-    CLEAR(VX_V4L2_CAST(s)->_format);
+    memset(&source->_format,0,sizeof(struct v4l2_format));
 
-    VX_V4L2_CAST(s)->_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    source->_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
 
     /** \todo need proper configuration */
+    unsigned int requestFormat = V4L2_PIX_FMT_YUYV;
 
-    VX_V4L2_CAST(s)->_format.fmt.pix.width       = 320;
-    VX_V4L2_CAST(s)->_format.fmt.pix.height      = 240;
-
-    VX_V4L2_CAST(s)->_format.fmt.pix.pixelformat = V4L2_PIX_FMT_RGB24;
-         VX_V4L2_CAST(s)->_format.fmt.pix.field       = V4L2_FIELD_INTERLACED;
+    source->_format.fmt.pix.width       = 640;
+    source->_format.fmt.pix.height      = 480;
+    source->_format.fmt.pix.pixelformat      = requestFormat;
+    source->_format.fmt.pix.field            = V4L2_FIELD_INTERLACED;
 
     // check if we can capture in this format
-    xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_S_FMT, &VX_V4L2_CAST(s)->_format);
+    ioctl(source->_fd, VIDIOC_S_FMT, &source->_format);
 
     // post-check
-    if (VX_V4L2_CAST(s)->_format.fmt.pix.pixelformat != V4L2_PIX_FMT_RGB24)
+    if (source->_format.fmt.pix.pixelformat != requestFormat)
     {
-       printf("Libv4l didn't accept RGB24 format. Can't proceed.\n");
+        printf("libv4l didn't accept 0x%x format for %s. Can't proceed.\n",requestFormat,n);
         return -1;
-             //exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }
 
 
@@ -118,77 +93,59 @@ int vx_source_v4l2_open(vx_source* s, const char* n)
     streamparm.parm.capture.timeperframe.numerator = 1;
     streamparm.parm.capture.timeperframe.denominator = 15;
 
-    xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_S_PARM, &streamparm);
+    ioctl(source->_fd, VIDIOC_S_PARM, &streamparm);
 
 
-    CLEAR(VX_V4L2_CAST(s)->_requestbuffers);
-    VX_V4L2_CAST(s)->_requestbuffers.count = 4;
-    VX_V4L2_CAST(s)->_requestbuffers.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    VX_V4L2_CAST(s)->_requestbuffers.memory = V4L2_MEMORY_MMAP;
-    xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_REQBUFS, &VX_V4L2_CAST(s)->_requestbuffers);
+    memset(&source->_requestbuffers,0,sizeof(struct v4l2_requestbuffers));
+    source->_requestbuffers.count = V4L_BUFFERS_COUNT;
+    source->_requestbuffers.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    source->_requestbuffers.memory = V4L2_MEMORY_MMAP;
+    if (ioctl(source->_fd, VIDIOC_REQBUFS, &source->_requestbuffers) < 0)
+        return -1;
 
+    for (i = 0; i < source->_requestbuffers.count; ++i)
+    {
+        memset(&source->_buffer,0,sizeof(struct v4l2_buffer));
 
+        source->_buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        source->_buffer.memory = V4L2_MEMORY_MMAP;
+        source->_buffer.index = i;
 
-    int n_buffers;
-   for (n_buffers = 0; n_buffers < VX_V4L2_CAST(s)->_requestbuffers.count; ++n_buffers)
-   {
-       //struct v4l2_buffer buf;
-
-       CLEAR (VX_V4L2_CAST(s)->_buffer);
-
-       VX_V4L2_CAST(s)->_buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-       VX_V4L2_CAST(s)->_buffer.memory = V4L2_MEMORY_MMAP;
-       VX_V4L2_CAST(s)->_buffer.index = n_buffers;
-
-       if (-1 == xioctl (VX_V4L2_CAST(s)->_fd, VIDIOC_QUERYBUF, &VX_V4L2_CAST(s)->_buffer))
-       {
-           perror ("VIDIOC_QUERYBUF");
-           //close();
+        if (-1 == ioctl (source->_fd, VIDIOC_QUERYBUF, &source->_buffer))
+        {
+            perror ("VIDIOC_QUERYBUF");
+            //close();
             return -1;
-       }
+        }
 
-       //printf("%s try to MMAP buffer %d\n",__FUNCTION__,n_buffers);
+        source->memAddress[i] = mmap((void*)0,source->_buffer.length,PROT_READ|PROT_WRITE,MAP_SHARED,source->_fd, source->_buffer.m.offset);
 
-       VX_V4L2_CAST(s)->buffers[n_buffers].length = VX_V4L2_CAST(s)->_buffer.length;
-       VX_V4L2_CAST(s)->buffers[n_buffers].start = v4l2_mmap (NULL /* start anywhere */,
-               VX_V4L2_CAST(s)->_buffer.length,
-               PROT_READ | PROT_WRITE /* required */,
-               MAP_SHARED /* recommended */,
-               VX_V4L2_CAST(s)->_fd, VX_V4L2_CAST(s)->_buffer.m.offset);
-       //printf("%s post MMAP buffer %d\n",__FUNCTION__,n_buffers);
-       if (MAP_FAILED == VX_V4L2_CAST(s)->buffers[n_buffers].start) {
-           perror ("mmap");
 
-           /* free capture, and returns an error code */
-            //this->close();
+        if (MAP_FAILED == source->memAddress[i]) {
+            perror ("mmap");
 
-           return -1;
-       }
+            return -1;
+        }
 
+        if (ioctl(source->_fd, VIDIOC_QBUF, &source->_buffer) < 0) {
+
+            return -1;
+        }
     }
 
-   int i = 0;
-   for (i = 0; i < n_buffers; ++i)
-   {
-       CLEAR(VX_V4L2_CAST(s)->_buffer);
-       VX_V4L2_CAST(s)->_buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-       VX_V4L2_CAST(s)->_buffer.memory = V4L2_MEMORY_MMAP;
-       VX_V4L2_CAST(s)->_buffer.index = i;
-       xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_QBUF, &VX_V4L2_CAST(s)->_buffer);
-   }
-
-    printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;
 }
 
 int vx_source_v4l2_close(vx_source* s)
 {
-    int i = 0;
-    for (i = 0; i < VX_V4L2_CAST(s)->_requestbuffers.count; ++i)
-        v4l2_munmap(VX_V4L2_CAST(s)->buffers[i].start, VX_V4L2_CAST(s)->buffers[i].length);
+    vx_source_v4l2 *source = VX_V4L2_CAST(s);
 
-    if (VX_V4L2_CAST(s)->_fd != 0)
-        VX_V4L2_CAST(s)->_fd = v4l2_close(VX_V4L2_CAST(s)->_fd);
+//    int i = 0;
+//    for (i = 0; i < source->_requestbuffers.count; ++i)
+//        v4l2_munmap(source->buffers[i].start, source->buffers[i].length);
+
+    if (source->_fd != 0)
+        source->_fd = v4l2_close(source->_fd);
 
     printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;
@@ -196,13 +153,14 @@ int vx_source_v4l2_close(vx_source* s)
 
 int vx_source_v4l2_set_state(vx_source* s,int state)
 {
-    VX_V4L2_CAST(s)->_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    vx_source_v4l2 *source = VX_V4L2_CAST(s);
+    source->_type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     switch (state) {
     case VX_SOURCE_STATE_RUNNING:
-        return xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_STREAMON, &VX_V4L2_CAST(s)->_type);
+        return ioctl(source->_fd, VIDIOC_STREAMON, &source->_type);
 
     case VX_SOURCE_STATE_STOP:
-        return xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_STREAMOFF, &VX_V4L2_CAST(s)->_type);
+        return ioctl(source->_fd, VIDIOC_STREAMOFF, &source->_type);
 
     }
 
@@ -216,16 +174,89 @@ int vx_source_v4l2_get_state(vx_source* s,int* state)
     return 0;
 }
 
-int vx_source_v4l2_enumerate(vx_source* s, vx_device_description **e, int *size)
+
+
+int vx_source_v4l2_fillcapabilities(int fd,vx_device_description* desc)
+{
+    int ret;
+    struct v4l2_fmtdesc fmt;
+    vx_device_capability newCapability;
+
+    memset(&fmt, 0, sizeof(fmt));
+    fmt.index = 0;
+    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    while ((ret = ioctl(fd, VIDIOC_ENUM_FMT, &fmt)) == 0) {
+
+        struct v4l2_frmsizeenum fsize;
+        memset(&fsize, 0, sizeof(fsize));
+        fsize.index = 0;
+        fsize.pixel_format = fmt.pixelformat;
+
+        /* enumerate sizes */
+        while ((ret = ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &fsize)) == 0) {
+            /* we only deal with discrete sizes */
+            if (fsize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+
+                struct v4l2_frmivalenum fival;
+
+                memset(&fival, 0, sizeof(fival));
+                fival.index = 0;
+                fival.pixel_format = fmt.pixelformat;
+                fival.width = fsize.discrete.width;
+                fival.height = fsize.discrete.height;
+
+                while ((ret = ioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &fival)) == 0) {
+                    if (fival.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
+
+
+                        newCapability.width = fsize.discrete.width;
+                        newCapability.height = fsize.discrete.height;
+
+                        newCapability.pixelFormat = fmt.pixelformat;
+
+                        newCapability.speed.numerator = fival.discrete.numerator;
+                        newCapability.speed.denominator = fival.discrete.denominator;
+
+                        if (_vx_source_addcapability(&newCapability,&desc->capabilities,&desc->capabilitiesCount) < 0)
+                            return -1;
+
+
+                    }
+
+                    fival.index++;
+                }
+
+
+            }
+
+
+            fsize.index++;
+
+        }
+
+
+        fmt.index++;
+
+    }
+
+    if (errno != EINVAL) {
+        printf("ERROR enumerating frame formats: %d\n", errno);
+        return errno;
+    }
+
+}
+
+int vx_source_v4l2_enumerate(vx_source* s)
 {
     glob_t globr;
     int i = 0;
+
 
     glob("/dev/video*",0,0,&globr);
 
     for (i = 0;i < globr.gl_pathc;++i) {
 
-        printf("Path %s\n",globr.gl_pathv[i]);
+        //        printf("Path %s\n",globr.gl_pathv[i]);
 
         int fd = open(globr.gl_pathv[i],O_RDWR);
 
@@ -243,11 +274,24 @@ int vx_source_v4l2_enumerate(vx_source* s, vx_device_description **e, int *size)
 
                     int newSizeDesc = s->deviceCount + 1;
 
-                    vx_device_description* pNewDesc =
-                            (vx_device_description*)realloc(s->devices,
-                                                            newSizeDesc * (sizeof(vx_device_description)));
+
+                    vx_device_description* pNewDesc = 0L;
+
+                    if (newSizeDesc == 1) {
+
+                        pNewDesc = (vx_device_description*)malloc(sizeof(vx_device_description));
+
+                    } else {
+                        pNewDesc = (vx_device_description*)realloc(s->devices,
+                                                                   newSizeDesc * (sizeof(vx_device_description)));
+
+                    }
+
 
                     if (pNewDesc) {
+
+                        memset(&pNewDesc[s->deviceCount],0,sizeof(struct vx_device_description));
+
 
                         struct v4l2_capability cap;
                         memset(&cap,0,sizeof(struct v4l2_capability));
@@ -260,8 +304,10 @@ int vx_source_v4l2_enumerate(vx_source* s, vx_device_description **e, int *size)
 
                         pNewDesc[s->deviceCount].uuid = strdup(globr.gl_pathv[i]);
 
-                       s->devices = pNewDesc;
-                       s->deviceCount++;
+                        vx_source_v4l2_fillcapabilities(fd,&pNewDesc[s->deviceCount]);
+
+                        s->devices = pNewDesc;
+                        s->deviceCount++;
 
                     }
                 }
@@ -277,78 +323,88 @@ int vx_source_v4l2_enumerate(vx_source* s, vx_device_description **e, int *size)
 
     globfree(&globr);
 
-    *e = s->devices;
-    *size = s->deviceCount;
-
-
-
-    printf("%s %d\n",__FUNCTION__,__LINE__);
     return 0;
 }
 
-int vx_source_v4l2_update(vx_source* s,int runloop)
+int vx_source_v4l2_update(vx_source* s,unsigned int runloop)
 {
 
-    fd_set fds;
+    fd_set fdsetRead,fdsetNull;
     struct timeval tv;
     int r,i;
+    struct vx_source_v4l2 *source = VX_V4L2_CAST(s);
 
-    FD_ZERO(&fds);
-    FD_SET(VX_V4L2_CAST(s)->_fd, &fds);
+    FD_ZERO(&fdsetRead);
+
+    FD_ZERO(&fdsetNull);
+
+    FD_SET(source->_fd, &fdsetRead);
 
     /* Timeout. */
     tv.tv_sec = 0;
-    tv.tv_usec = 100;
+    tv.tv_usec = 0;
 
-    r = select(VX_V4L2_CAST(s)->_fd, &fds, NULL, NULL, &tv);
-
-    /* basically mean we don't have a new frame */
-    if ( (r == -1) && errno == EINTR ) {
-        fprintf(stderr,"Error Select!\n");
+    /* we don't have a new frame */
+    if (select(source->_fd + 1, &fdsetRead, &fdsetNull, &fdsetNull, &tv) < 0)
         return 0;
-    }
-
-    CLEAR(VX_V4L2_CAST(s)->_buffer);
-    VX_V4L2_CAST(s)->_buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    VX_V4L2_CAST(s)->_buffer.memory = V4L2_MEMORY_MMAP;
-
-    // try to check out the buffer
-    if (-1 == xioctl (VX_V4L2_CAST(s)->_fd, VIDIOC_DQBUF, &VX_V4L2_CAST(s)->_buffer))
-    {
-        switch (errno) {
-            case EAGAIN:
-                return -1;
-            case EIO:
-                /* Could ignore EIO, see spec. */
-                break;
-            default:
-                /* display the error and stop processing */
-                perror ("VIDIOC_DQBUF");
-                return -2;
-            }
-    }
-
-    // calc offset
-    unsigned int bytes_per_row = VX_V4L2_CAST(s)->_format.fmt.pix.width * 3;
 
 
-    VX_V4L2_CAST(s)->frame.frame++;
-    VX_V4L2_CAST(s)->frame.data = VX_V4L2_CAST(s)->buffers[VX_V4L2_CAST(s)->_buffer.index].start;
-    VX_V4L2_CAST(s)->frame.dataSize = VX_V4L2_CAST(s)->buffers[VX_V4L2_CAST(s)->_buffer.index].length;
+    struct v4l2_buffer buffer;
 
-    VX_V4L2_CAST(s)->frame.stride = bytes_per_row;
-    VX_V4L2_CAST(s)->frame.width = VX_V4L2_CAST(s)->_format.fmt.pix.width;
-    VX_V4L2_CAST(s)->frame.height = VX_V4L2_CAST(s)->_format.fmt.pix.height;
+    memset(&buffer,0,sizeof(struct v4l2_buffer));
+    buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buffer.memory = V4L2_MEMORY_MMAP;
 
 
-    VX_V4L2_CAST(s)->frame.colorModel = 0;
+    if (ioctl (source->_fd, VIDIOC_DQBUF, &buffer) < 0)
+        return -1;
 
-    _vx_send_frame(s,&VX_V4L2_CAST(s)->frame);
+
+    struct vx_frame* frame = &source->frame;
+    int bufferIndex = source->_buffer.index;
+
+    unsigned int bytes_per_row = source->_format.fmt.pix.width * 3;
+
+    frame->data = source->memAddress[bufferIndex];
+    frame->dataSize = source->_buffer.bytesused;
+
+    frame->stride = bytes_per_row;
+    frame->width = source->_format.fmt.pix.width;
+    frame->height = source->_format.fmt.pix.height;
+
+
+    frame->colorModel = VX_E_COLOR_RGB24;
+    frame->bpp = 24;
+//    frame->tick = buffer.timestamp;
+
+    frame->frame++;
+
+    _vx_send_frame(s,frame);
 
     // check in the buffer
-    xioctl(VX_V4L2_CAST(s)->_fd, VIDIOC_QBUF, &VX_V4L2_CAST(s)->_buffer);
+    ioctl(source->_fd, VIDIOC_QBUF, &source->_buffer);
 
-    printf("%s %d\n",__FUNCTION__,__LINE__);
+
+    _vx_broadcast(s);
+
+
+//    // try to check out the buffer
+//    if (-1 == xioctl (source->_fd, VIDIOC_DQBUF, &source->_buffer))
+//    {
+//        switch (errno) {
+//        case EAGAIN:
+//            return -1;
+//        case EIO:
+//            /* Could ignore EIO, see spec. */
+//            break;
+//        default:
+//            /* display the error and stop processing */
+//            perror ("VIDIOC_DQBUF");
+//            return -2;
+//        }
+//    }
+
+
     return 0;
 }
 
@@ -356,6 +412,18 @@ void*
 vx_source_v4l2_create()
 {
     vx_source_v4l2* s = malloc(sizeof(vx_source_v4l2));
+
+    memset(s,0,sizeof(struct vx_source_v4l2));
+
+
+    VX_OBJECT_CAST(s)->destroy = 0;
+    VX_OBJECT_CAST(s)->id = 0;
+    VX_OBJECT_CAST(s)->refCount = 0;
+
+
+    VX_SOURCE_CAST(s)->deviceCount = 0;
+    VX_SOURCE_CAST(s)->devices = 0L;
+
 
     VX_SOURCE_CAST(s)->open = vx_source_v4l2_open;
     VX_SOURCE_CAST(s)->close = vx_source_v4l2_close;

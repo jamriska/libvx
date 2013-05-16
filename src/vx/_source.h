@@ -78,6 +78,9 @@ VX_CALL_C int _vx_send_frame(vx_source* source, const vx_frame* frame);
 
 VX_CALL_C int _vx_broadcast(vx_source* source);
 
+VX_CALL_C int _vx_source_addcapability(const vx_device_capability* newCap,vx_device_capability** caps,unsigned int *capcount);
+
+
 
 
 #endif

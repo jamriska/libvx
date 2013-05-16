@@ -44,7 +44,7 @@ typedef struct vx_source vx_source;
 
 enum {
 	VX_SINK_TYPE_DIRECT			= 0x0,	/**< sink will directly notify the callback */
-	VX_SINK_TYPE_BUFFERING,				/**< sink will copy the buffer */
+    VX_SINK_TYPE_BUFFERED,				/**< sink will copy the buffer */
 	VX_SINK_TYPE_USERDEFINED	= 0xff  /**< reserved */
 };
 

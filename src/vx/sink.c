@@ -31,25 +31,67 @@ either expressed or implied, of the VideoExtractor Project.
 
 #include "_sink.h"
 #include "_globals.h"
+#include "_source.h"
+
+static int
+_vx_frame_copy(const vx_frame* in,vx_frame* out)
+{
+
+    void* newData = 0;
+
+    if (!in || !out || !in->data || !in->dataSize) return -1;
+
+    /* new memory allocation */
+    if (out->data == 0 && out->dataSize == 0) {
+        void* newData = malloc(in->dataSize);
+        if (newData) {
+            out->data = newData;
+            out->dataSize = in->dataSize;
+        } else {
+            return -1;
+        }
+    }
+
+    /* resize buffer if necessary */
+    if (out->data && (out->dataSize != in->dataSize)) {
+        newData = realloc(out->data,in->dataSize);
+        if (newData) {
+            out->data = newData;
+            out->dataSize = in->dataSize;
+        } else {
+            return -1;
+        }
+    }
+
+
+    out->bpp = in->bpp;
+    out->colorModel = in->colorModel;
+    out->dataType = in->dataType;
+    out->frame = in->frame;
+    out->height = in->height;
+    out->width = in->width;
+    out->stride = in->stride;
+    out->tick = in->tick;
+
+
+
+    memcpy(out->data,in->data,in->dataSize);
+
+
+
+
+    return 0;
+
+}
+
 
 static void
-_vx_simple_copy_callback(vx_source* source, vx_sink* sink, const vx_frame* f)
+_vx_simple_copy_callback(struct vx_source* source, struct vx_sink* sink, const vx_frame* f)
 {
-	/* copy data over */
-	memcpy(&sink->buffer,(const void*)f,sizeof(struct vx_frame));
 
-	/* resize buffer if necessary */
-	if (sink->buffer.data && sink->buffer.dataSize != f->dataSize) {
-		void* newData = realloc(sink->buffer.data,f->dataSize);
-		if (newData) {
-			sink->buffer.data = newData;
-			sink->buffer.dataSize = f->dataSize;
-		}
-	}
+    fprintf(stderr,"%p %s\n",sink,__FUNCTION__);
 
-	/* now copy the buffer */
-	memcpy(sink->buffer.data,f->data,f->dataSize);
-
+//    _vx_frame_copy(f,&sink->buffer);
 }
 
 static
@@ -69,14 +111,15 @@ vx_sink_create(const char *name, unsigned int sinkType) {
 
 	vx_sink* c = malloc(sizeof(struct vx_sink));
 
+    memset(c,0,sizeof(struct vx_sink));
+    memset(&c->buffer,0,sizeof(struct vx_frame));
+
 	VX_OBJECT_CAST(c)->id = 0;
 	VX_OBJECT_CAST(c)->refCount = 0;
 	VX_OBJECT_CAST(c)->destroy = _vx_sink_destroy;
 
 	c->frameCallback = 0;
 	c->frameCallbackUserData = 0;
-
-	memset(&c->buffer,0,sizeof(struct vx_frame));
 
 	/* preset */
 	c->name = strdup(name);

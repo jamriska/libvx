@@ -35,17 +35,43 @@ either expressed or implied, of the VideoExtractor Project.
 
 VX_C_DECL_BEGIN
 
+/* make fourcc */
+#define VX_FOURCC(a, b, c, d)\
+    ((unsigned int)(a) | ((unsigned int)(b) << 8) | ((unsigned int)(c) << 16) | ((unsigned int)(d) << 24))
+
+/* retrieve fourcc */
+#define VX_FOURCC_TO_CHAR(fourcc,cstr)    \
+    cstr[0] = (fourcc & 0xff); \
+    cstr[1] = (fourcc & 0xff00)     >> 8;\
+    cstr[2] = (fourcc & 0xff0000)   >> 16;\
+    cstr[3] = (fourcc & 0xff000000) >> 24;
+
+
+
+/* only using what has been mentioned here :
+ * http://people.xiph.org/~xiphmont/containers/nut/nut4cc.txt
+ */
+
 /** color model and pixel format of the retrieved frame */
 enum vx_colormodel {
 	VX_E_COLOR_NONE                 = 0,
-	VX_E_COLOR_GRAY8,
-	VX_E_COLOR_RGB24,
-	VX_E_COLOR_BGR24,
-	VX_E_COLOR_ARGB,
-	VX_E_COLOR_RGBA,
-	VX_E_COLOR_ABGR,
-	VX_E_COLOR_BGRA,
-	VX_E_COLOR_YU12,
+    VX_E_COLOR_GRAY8                = VX_FOURCC('Y','8','0','0'),
+    VX_E_COLOR_RGB24                = VX_FOURCC('R','G','B','8'),
+    VX_E_COLOR_BGR24                = VX_FOURCC('B','G','R','8'),
+    VX_E_COLOR_ARGB                 = VX_FOURCC('A','R','G','B'),
+    VX_E_COLOR_RGBA                 = VX_FOURCC('R','G','B','A'),
+    VX_E_COLOR_ABGR                 = VX_FOURCC('A','B','G','R'),
+    VX_E_COLOR_BGRA                 = VX_FOURCC('B','G','R','A'),
+    VX_E_COLOR_YU12                 = VX_FOURCC('Y','V','1','2'),
+    VX_E_COLOR_YUVY                 = VX_FOURCC('U','Y','V','Y'),
+    VX_E_COLOR_422P                 = VX_FOURCC('4','2','2','P'),
+    /* aliases */
+    VX_E_COLOR_420P                 = VX_E_COLOR_YU12,
+    VX_E_COLOR_422I                 = VX_E_COLOR_YUVY,
+
+    /* compressed */
+    VX_E_COLOR_MJPEG                = VX_FOURCC('M','J','P','G'),
+
 	VX_E_COLOR_USERDEFINED          = 0xFF
 };
 
@@ -54,7 +80,7 @@ enum vx_datatype {
 	VX_E_DATATYPE_NONE          = 0,
 	VX_E_DATATYPE_UCHAR,
 	VX_E_DATATYPE_FLOAT,
-	VX_E_DATATYPE_USERDEFINED   = 0xFF
+    VX_E_DATATYPE_USERDEFINED   = 0xFFFFFFFF
 };
 
 
