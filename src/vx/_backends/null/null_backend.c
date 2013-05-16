@@ -1,8 +1,8 @@
-#include "null_backend.h"
-
+#include "_globals.h"
 #include "_source.h"
 #include "_frame.h"
 
+#include "null_backend.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,8 +15,8 @@ typedef struct vx_source_null {
 } vx_source_null;
 
 
+static vx_device_description null_desc;
 static vx_device_capability null_cap;
-
 
 
 /* helpers */
@@ -50,8 +50,12 @@ int vx_source_null_get_state(vx_source* s,int* state)
 
 int vx_source_null_enumerate(vx_source* s)
 {
+
+	null_desc.capabilities = &null_cap;
+
     s->deviceCount = 1;
-    s->devices = &null_cap;
+	s->devices = &null_desc;
+
 
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;
@@ -59,40 +63,46 @@ int vx_source_null_enumerate(vx_source* s)
 
 int vx_source_null_update(vx_source* s,unsigned int runloop)
 {
-	printf("%s %d\n",__FUNCTION__,__LINE__);
 
     struct vx_source_null* null = VX_NULL_CAST(s);
 
     if (null->fakeFrame.data) {
         _vx_send_frame(s,&null->fakeFrame);
+
+		_vx_broadcast(s);
+
     } else {
 
-        int w = 640;
+		printf("%s %d\n",__FUNCTION__,__LINE__);
+
+		int w = 640;
         int h = 480;
 
-        _vx_frame_create(w,h,VX_E_COLOR_BGR24,&null->fakeFrame);
+		_vx_frame_create(w,h,VX_E_COLOR_RGB24,&null->fakeFrame);
 
         unsigned char* data = null->fakeFrame.data;
 
-        int i,j;
-        for (    i = 0; i < w; ++i ) {
-            for (j = 0; j < h; ++j ) {
+		int i;
+		for (    i = 0; i < null->fakeFrame.dataSize; ++i )				{
+			data[i] = 0xCC;
+		}
 
-                data[j*w+i] = 0;
-                data[j*w+i] = 0xFF;
-                data[j*w+i] = 0;
-            }
-        }
+		int border = 20;
+
+		int j = 0;
+		for (    i = border; i < w-border; ++i )						for (    j = border; j < h-border; ++j )						{
+			data[j*w+i] = 0xFF;
+		}
     }
-
-
 	return 0;
 }
 
 void*
 vx_source_null_create()
 {
-	vx_source_null* s = malloc(sizeof(struct vx_source_null));
+	struct vx_source_null* s = malloc(sizeof(struct vx_source_null));
+
+	memset((void*)s,0,sizeof(struct vx_source_null));
 
 	VX_SOURCE_CAST(s)->open = vx_source_null_open;
 	VX_SOURCE_CAST(s)->close = vx_source_null_close;

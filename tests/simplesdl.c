@@ -17,7 +17,7 @@ vx_sink *sink;
 
 void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, void *userdata)
 {
-    unsigned long mask[4];
+	unsigned int mask[4];
 	mask[0]=mask[1]=mask[2]=mask[3]=0;
 
 	switch (frame->colorModel) {
@@ -132,7 +132,7 @@ void vxInit()
 		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
 	}
 
-    sink = vx_sink_create("context",VX_SINK_TYPE_CONVERTED);
+	sink = vx_sink_create("context",VX_SINK_TYPE_DIRECT);
 
 	vx_sink_set_frame_callback(sink,&vxCaptureCallback,0);
 

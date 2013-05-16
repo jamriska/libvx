@@ -29,12 +29,25 @@ either expressed or implied, of the VideoExtractor Project.
 #ifndef _LIBVX_INT_FRAME_H_
 #define _LIBVX_INT_FRAME_H_ 1
 
-
 #include "vx/vx.h"
 
+/**
+ * @brief create the header for the buffer
+ * @param w width of the buffer
+ * @param h height of the buffer
+ * @param fourCC FourCC based code
+ * @param frame only the internal structures are set, no memory is allocated
+ */
 void _vx_frame_create_header(int w, int h,unsigned int fourCC,vx_frame* frame);
 
 
+/**
+ * @brief create the header and the buffer
+ * @param w width of the frame
+ * @param h height of the frame
+ * @param fourCC FourCC based code for declaring the pixelformat
+ * @param frame structures are set and memory for the buffer are allocated
+ */
 void _vx_frame_create(int w, int h,unsigned int fourCC,vx_frame* frame);
 
 #endif

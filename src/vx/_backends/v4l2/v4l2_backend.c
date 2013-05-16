@@ -88,8 +88,8 @@ int vx_source_v4l2_open(vx_source* s, const char* n,vx_device_capability* cap)
 
     source->_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    source->_format.fmt.pix.width       = cap->width;
-    source->_format.fmt.pix.height      = cap->height;
+	source->_format.fmt.pix.width			 = cap->width;
+	source->_format.fmt.pix.height			 = cap->height;
     source->_format.fmt.pix.pixelformat      = cap->pixelFormat;
 
     source->_format.fmt.pix.field            = V4L2_FIELD_INTERLACED;
