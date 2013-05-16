@@ -25,6 +25,7 @@ set(srcs
 	kernel.c
 	source.c
 	sink.c
+	frame.c
 	)
 
 file(GLOB internal_hdrs

@@ -44,12 +44,35 @@ typedef struct vx_source_v4l2 {
     ((struct vx_source_v4l2*)(ptr))
 
 
-int vx_source_v4l2_open(vx_source* s, const char* n)
+int vx_source_v4l2_open(vx_source* s, const char* n,vx_device_capability* cap)
 {
 
     struct vx_source_v4l2 *source = VX_V4L2_CAST(s);
     int i = 0;
 
+    char* devName = 0;
+
+    if (n == 0) {
+        vx_source_enumerate(s,0,0);
+        s->enumerate(s);
+        if (s->deviceCount) {
+            devName = s->devices[0].uuid;
+        } else {
+            return -1;
+        }
+    } else {
+        devName = &n[0];
+    }
+
+    if (cap == 0) {
+        for(i = 0;i<s->deviceCount;++i) {
+            if (0 == strcmp(s->devices[i].uuid,devName)) {
+                if (s->devices[i].capabilitiesCount) {
+                    cap = &s->devices[i].capabilities[0];
+                }
+            }
+        }
+    }
 
     source->frame.frame = 0;
 
@@ -65,33 +88,35 @@ int vx_source_v4l2_open(vx_source* s, const char* n)
 
     source->_format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
+    source->_format.fmt.pix.width       = cap->width;
+    source->_format.fmt.pix.height      = cap->height;
+    source->_format.fmt.pix.pixelformat      = cap->pixelFormat;
 
-    /** \todo need proper configuration */
-    unsigned int requestFormat = V4L2_PIX_FMT_YUYV;
-
-    source->_format.fmt.pix.width       = 640;
-    source->_format.fmt.pix.height      = 480;
-    source->_format.fmt.pix.pixelformat      = requestFormat;
     source->_format.fmt.pix.field            = V4L2_FIELD_INTERLACED;
 
     // check if we can capture in this format
     ioctl(source->_fd, VIDIOC_S_FMT, &source->_format);
 
     // post-check
-    if (source->_format.fmt.pix.pixelformat != requestFormat)
+    if (source->_format.fmt.pix.pixelformat != cap->pixelFormat)
     {
-        printf("libv4l didn't accept 0x%x format for %s. Can't proceed.\n",requestFormat,n);
+        printf("libv4l didn't accept 0x%x format for %s. Can't proceed.\n",cap->pixelFormat,n);
         return -1;
         //exit(EXIT_FAILURE);
     }
+
+    char fourCC[5]; fourCC[4] = '\0';
+    VX_FOURCC_TO_CHAR(cap->pixelFormat,fourCC);
+
+    fprintf(stdout,"Choose %s %dx%d (%d) %s\n",devName,cap->width,cap->height,cap->pixelFormat,fourCC);
 
 
     // set the camera speed
     struct v4l2_streamparm streamparm;
     memset (&streamparm, 0, sizeof(struct v4l2_streamparm));
     streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    streamparm.parm.capture.timeperframe.numerator = 1;
-    streamparm.parm.capture.timeperframe.denominator = 15;
+    streamparm.parm.capture.timeperframe.numerator = cap->speed.numerator;
+    streamparm.parm.capture.timeperframe.denominator = cap->speed.denominator;
 
     ioctl(source->_fd, VIDIOC_S_PARM, &streamparm);
 
@@ -366,15 +391,21 @@ int vx_source_v4l2_update(vx_source* s,unsigned int runloop)
     unsigned int bytes_per_row = source->_format.fmt.pix.width * 3;
 
     frame->data = source->memAddress[bufferIndex];
-    frame->dataSize = source->_buffer.bytesused;
+    frame->dataSize = buffer.bytesused;
 
     frame->stride = bytes_per_row;
     frame->width = source->_format.fmt.pix.width;
     frame->height = source->_format.fmt.pix.height;
 
+#if 1
+    frame->colorModel = source->_format.fmt.pix.pixelformat;
+    frame->bpp = 24;
+#else
 
     frame->colorModel = VX_E_COLOR_RGB24;
     frame->bpp = 24;
+#endif
+
 //    frame->tick = buffer.timestamp;
 
     frame->frame++;

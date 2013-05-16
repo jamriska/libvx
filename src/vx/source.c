@@ -188,7 +188,7 @@ vx_source_open(vx_source *s, const char* uuid,vx_device_capability* cap)
 	s->sinkCount = 0;
 	s->sinks = 0;
 
-    return VX_SOURCE_CAST(s)->open(s,uuid);
+    return VX_SOURCE_CAST(s)->open(s,uuid,cap);
 }
 
 int
@@ -281,11 +281,23 @@ _vx_send_frame(vx_source* source,const vx_frame* frame)
 {
 	int i = 0;
 	for(i = 0;i < source->sinkCount;++i) {
+
 		struct vx_sink* sink = (*source).sinks[i];
-		if (sink->sinkType == VX_SINK_TYPE_DIRECT)
-			sink->frameCallback(source,sink,frame,sink->frameCallbackUserData);
-		else
-			sink->copyCallback(source,sink,frame);
+
+        switch (sink->sinkType) {
+
+        case VX_SINK_TYPE_DIRECT:
+            sink->frameCallback(source,sink,frame,sink->frameCallbackUserData);
+            break;
+        case VX_SINK_TYPE_BUFFERED:
+            sink->copyCallback(source,sink,frame);
+            break;
+        case VX_SINK_TYPE_CONVERTED:
+            sink->conversionCallback(source,sink,frame);
+            break;
+        default:
+            break;
+        }
 	}
 
 	return 0;

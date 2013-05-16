@@ -48,6 +48,8 @@ struct vx_sink {
 	unsigned char sinkType;
 
 	vx_copy_cb_t copyCallback;
+    vx_copy_cb_t conversionCallback;
+
 	vx_frame_cb_t frameCallback;
 
 	void* frameCallbackUserData;
