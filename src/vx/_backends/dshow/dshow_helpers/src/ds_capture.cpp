@@ -1189,6 +1189,8 @@ STDMETHODIMP CapturePin::QueryDirection( PIN_DIRECTION * pPinDir )
 STDMETHODIMP CapturePin::QueryId( LPWSTR * Id )
 {
 	SSTT_DS_DEBUG("CapturePin::QueryId");
+
+
     *Id = L"libVX Capture Pin";
 
 	return S_OK;

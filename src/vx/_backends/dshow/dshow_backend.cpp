@@ -396,7 +396,7 @@ InitColorSpaceFilter(vx_source_dshow* cap)
 }
 
 
-int vx_source_dshow_open(vx_source* s, const char* n)
+int vx_source_dshow_open(vx_source* s, const char* uuid,vx_device_capability* c)
 {
 	vx_source_dshow* dsSource = VX_DSHOW_CAST(s);
 
@@ -404,7 +404,7 @@ int vx_source_dshow_open(vx_source* s, const char* n)
 	InitGraphBuilder(dsSource);
 	InitFilterGraph(dsSource);
 
-	InitCaptureDevice(dsSource,n);
+    InitCaptureDevice(dsSource,uuid);
 	PresetCaptureDevice(dsSource);
 
 #if USE_COLORSPACEFILTER
@@ -477,7 +477,7 @@ int vx_source_dshow_get_state(vx_source* s,int* state)
 	return 0;
 }
 
-int vx_source_dshow_enumerate(vx_source* s, vx_device_description **devices,int *size)
+int vx_source_dshow_enumerate(vx_source* s)
 {
 
 #if defined(_WIN32_WCE)
@@ -609,10 +609,6 @@ Cleanup:
 return 0;
 
 #endif
-
-
-    *size = s->deviceCount;
-    *devices = s->devices;
 
 	printf("%s %d\n",__FUNCTION__,__LINE__);
 	return 0;

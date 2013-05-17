@@ -59,7 +59,7 @@ struct vx_source {
 	vx_device_description* devices;
 	int deviceCount;
 
-} _vx_source;
+};
 
 #if defined (__cplusplus)
 #define VX_CALL_C extern "C"

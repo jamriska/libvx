@@ -54,7 +54,7 @@ struct vx_sink {
 
 	void* frameCallbackUserData;
 
-} _vx_sink;
+};
 
 #define VX_SINK_CAST(ptr) \
 	((vx_sink*)ptr)
