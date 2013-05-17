@@ -26,7 +26,6 @@ int main(int argc, char** argv)
     }
 
 	vx_source_enumerate(source,&devices,&deviceCount);
-
 	if (deviceCount == 0)
 		return -1;
 
@@ -39,6 +38,8 @@ int main(int argc, char** argv)
 	vx_sink_set_frame_callback(sink,&frameCallback,0);
 
 	if (vx_source_open(source,devices[0].uuid) == 0)
+
+    if (vx_source_open(source,devices[0].uuid) == 0)
 	{
 		vx_source_add_sink(source,sink);
 
