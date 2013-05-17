@@ -143,9 +143,11 @@ int InitCaptureDevice(vx_source_dshow* cap,const char* uuid) {
 	return 0;
 }
 
-int InitRenderer(vx_source_dshow* cap, int renderType = 0)
+int InitRenderer(vx_source_dshow* cap, int renderType = 0,bool doEnumerate = false)
 {
 	HRESULT hr(S_OK);
+
+    vx_source* source = VX_SOURCE_CAST(cap);
 
 	const CLSID ___CLSID_NullRenderer =	{0xC1F400A4, 0x3F08, 0x11D3,{0x9F, 0x0B, 0x00, 0x60, 0x08, 0x03, 0x9E, 0x37}};
 
@@ -166,7 +168,7 @@ int InitRenderer(vx_source_dshow* cap, int renderType = 0)
 
 		case 2:
 
-			cap->_SinkFilter = new CaptureFilter(cap,0,0);
+            cap->_SinkFilter = new CaptureFilter(source,0,0);
 			break;
 
 		case 3:
@@ -477,6 +479,55 @@ int vx_source_dshow_get_state(vx_source* s,int* state)
 	return 0;
 }
 
+
+struct vxEnumerateCallback : EnumerateCallback {
+
+    vx_device_description* _desc;
+
+    vxEnumerateCallback(vx_device_description* desc)
+        : _desc(desc) {}
+
+    virtual void operator ()(const AM_MEDIA_TYPE* pmt)
+    {
+        if( pmt->majortype == MEDIATYPE_Video )
+        {
+
+            vx_device_capability newCap;
+
+            newCap.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
+            newCap.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
+
+            if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
+                newCap.pixelFormat = VX_E_COLOR_RGB565;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB555))
+                newCap.pixelFormat = VX_E_COLOR_RGB555;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB32))
+                newCap.pixelFormat = VX_E_COLOR_RGBA;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB8))
+                newCap.pixelFormat = VX_E_COLOR_RGBA;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24))
+                newCap.pixelFormat = VX_E_COLOR_RGB24;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32))
+                newCap.pixelFormat = VX_E_COLOR_ARGB;
+            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB4))
+                newCap.pixelFormat = VX_E_COLOR_USERDEFINED;
+            else
+                newCap.pixelFormat = pmt->subtype.Data1;
+
+            newCap.speed.numerator = 1.f;
+            newCap.speed.denominator = 10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame);
+
+            if (newCap.width && newCap.height)
+                _vx_source_addcapability(&newCap,
+                                         &_desc->capabilities,
+                                         &_desc->capabilitiesCount);
+
+        }
+    }
+};
+
+
+
 int vx_source_dshow_enumerate(vx_source* s)
 {
 
@@ -512,9 +563,7 @@ Cleanup:
 	FindClose( handle );
 	return hr;
 
-#endif
-
-#if !defined(_WIN32_WCE) 
+#else
 
     HRESULT hr						= E_FAIL;
 	IBaseFilter **ppCap				= NULL;
@@ -578,19 +627,46 @@ Cleanup:
         int newSizeDesc = s->deviceCount + 1;
 
         vx_device_description* pNewDesc =
-                (vx_device_description*)realloc(s->devices,newSizeDesc * (sizeof(vx_device_description)));
+                (vx_device_description*)realloc(s->devices,
+                                                newSizeDesc * (sizeof(vx_device_description)));
 
         if (pNewDesc) {
 
             WideCharacterConversion conv;
 
+
+            memset(&pNewDesc[s->deviceCount],0,sizeof(struct vx_device_description));
+
+
             pNewDesc[s->deviceCount].name = _strdup(conv(var_name.bstrVal));
             conv.destroy();
             pNewDesc[s->deviceCount].uuid = _strdup(conv(disp_name));
-            conv.destroy();
+
 
             s->devices = pNewDesc;
             s->deviceCount = newSizeDesc;
+
+
+            vx_source_dshow* dsSource = (vx_source_dshow*)vx_source_dshow_create();
+
+            InitGraphBuilder(dsSource);
+            InitFilterGraph(dsSource);
+
+            InitCaptureDevice(dsSource,conv.mb_str());
+            PresetCaptureDevice(dsSource);
+            InitRenderer(dsSource,2,true);
+
+            CaptureFilter* cf = (CaptureFilter*)dsSource->_SinkFilter;
+
+
+            vxEnumerateCallback cb(&pNewDesc[s->deviceCount-1]);
+
+            cf->SetEnumerateCallback(&cb);
+
+            RunCapture(dsSource);
+
+            vx_source_dshow_close((vx_source*)dsSource);
+
         }
 
 		if (hr != S_OK)
@@ -605,8 +681,6 @@ Cleanup:
 	pCreateDevEnum->Release();
 	pEm->Release();
 
-#else
-return 0;
 
 #endif
 
@@ -633,6 +707,9 @@ vx_source_dshow_create()
 	vx_source_dshow* s = (vx_source_dshow*)malloc(sizeof(vx_source_dshow));
 
 	memset(s,0,sizeof(vx_source_dshow));
+
+    s->super.deviceCount = 0;
+    s->super.devices = 0L;
 
 	VX_SOURCE_CAST(s)->open = vx_source_dshow_open;
 	VX_SOURCE_CAST(s)->close = vx_source_dshow_close;

@@ -21,16 +21,16 @@ int main(int argc, char** argv)
 
     source = vx_source_create((argc > 1) ? argv[1] : 0);
 
-    if (source == 0) {
+    if (source == 0)
         return -1;
-    }
 
 	vx_source_enumerate(source,&devices,&deviceCount);
 	if (deviceCount == 0)
 		return -1;
 
 	for (i = 0; i < deviceCount;++i) {
-		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
+
+        fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
 
         for (j = 0; j < devices[i].capabilitiesCount;++j) {
 
@@ -40,8 +40,10 @@ int main(int argc, char** argv)
             VX_FOURCC_TO_CHAR(devcap->pixelFormat,fourcc);
             fourcc[4] = '\0';
 
-            fprintf(stdout,"\t%dx%d @%f/%f fps fourcc:%s\n",
-                     devcap->width,devcap->height,devcap->speed.numerator,devcap->speed.denominator,fourcc);
+            fprintf(stdout,"\t%dx%d @%f/%f fps fourcc:%s (0x%x)\n",
+                     devcap->width,devcap->height,
+                    devcap->speed.numerator,devcap->speed.denominator,
+                    fourcc,devcap->pixelFormat);
         }
 	}
 

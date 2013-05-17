@@ -167,7 +167,7 @@ _vx_frame_conversion(const vx_frame* in,vx_frame* out)
 
 
     switch (in->colorModel) {
-    case VX_E_COLOR_YUVY:
+    case VX_E_COLOR_YUYV:
         if (out->colorModel == VX_E_COLOR_BGR24) {
             _UYVYtoBGR(in,out);
 //            convert_YUYV_to_RGB24(in,out);

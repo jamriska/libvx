@@ -21,8 +21,13 @@
 #include "_source.h"
 #include "vx/frame.h"
 
+//typedef struct vx_source_dshow vx_source_dshow;
 
-typedef struct vx_source_dshow vx_source_dshow;
+
+struct EnumerateCallback
+{
+    virtual void operator()(const AM_MEDIA_TYPE *pmt ) = 0;
+};
 
 
 class CapturePin : public IPin, public IMemInputPin
@@ -43,7 +48,8 @@ class CapturePin : public IPin, public IMemInputPin
 
 	AM_MEDIA_TYPE _connected_mediatype;
 
-	vx_source_dshow* _handle;
+    vx_source* _handle;
+
 
 	IMemAllocator* _allocator;
 	ALLOCATOR_PROPERTIES _allocator_properties;
@@ -54,7 +60,10 @@ class CapturePin : public IPin, public IMemInputPin
 
 public:
 
-	CapturePin(vx_source_dshow* handle,IBaseFilter* capturefilter,AM_MEDIA_TYPE *mediatypes, size_t mediatypes_count);
+    CapturePin(vx_source* handle,
+               IBaseFilter* capturefilter,
+               AM_MEDIA_TYPE *mediatypes,
+               size_t mediatypes_count);
 
 	virtual ~CapturePin();
 
@@ -108,11 +117,13 @@ class CaptureFilter : public IBaseFilter
 
 	long i_ref;
 
-	vx_source_dshow* _handle;
+    vx_source* _handle;
+
+    EnumerateCallback* _mediatypeCallback;
 
 public:
 
-	CaptureFilter( vx_source_dshow* handle, AM_MEDIA_TYPE *mt, size_t mt_count );
+    CaptureFilter(vx_source* handle, AM_MEDIA_TYPE *mt, size_t mt_count );
 
 	/* IUnknown methods */
 	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
@@ -145,6 +156,12 @@ public:
 	CapturePin *CustomGetPin();
 	virtual ~CaptureFilter();
 
+
+    void SetEnumerateCallback(EnumerateCallback* cb)
+    {
+        _mediatypeCallback = cb;
+    }
+
 };
 
 
@@ -157,10 +174,10 @@ class CaptureEnumPins : public IEnumPins
 	int i_position;
 	long i_ref;
 
-	vx_source_dshow* _handle;
+    vx_source* _handle;
 
 public:
-	CaptureEnumPins( vx_source_dshow* handle, CaptureFilter *_p_filter,
+    CaptureEnumPins( vx_source* handle, CaptureFilter *_p_filter,
 		CaptureEnumPins *pEnumPins );
 	virtual ~CaptureEnumPins();
 
@@ -186,10 +203,10 @@ class CaptureEnumMediaTypes : public IEnumMediaTypes
 	size_t _position;
 	long _refcount;
 
-	vx_source_dshow* _handle;
+    vx_source* _handle;
 
 public:
-	CaptureEnumMediaTypes( vx_source_dshow* _handle, CapturePin *_p_pin,
+    CaptureEnumMediaTypes( vx_source* _handle, CapturePin *_p_pin,
 		CaptureEnumMediaTypes *pEnumMediaTypes );
 
 	virtual ~CaptureEnumMediaTypes();

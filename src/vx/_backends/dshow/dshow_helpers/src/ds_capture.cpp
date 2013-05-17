@@ -17,6 +17,7 @@
 
 #include "vx/frame.h"
 #include "_source.h"
+#include "_sink.h"
 
 inline
 bool ignore_compare(int measurement, int minVal) 
@@ -692,13 +693,17 @@ STDAPI CreateMemoryAllocator( IMemAllocator **ppAllocator )
 /****************************************************************************
 * Implementation of our dummy directshow filter class
 ****************************************************************************/
-CaptureFilter::CaptureFilter( vx_source_dshow* handle, AM_MEDIA_TYPE *mt, size_t mt_count ) :
-	_capturepin(NULL),
-	_state( State_Stopped ),
-	i_ref( 1 ),
-	_handle(handle),
-	_filtergraph(NULL),
-	_clock(NULL)
+CaptureFilter::CaptureFilter(vx_source *handle,
+        AM_MEDIA_TYPE *mt,
+        size_t mt_count
+        )
+    : _capturepin(NULL)
+    , _state( State_Stopped )
+    , i_ref( 1 )
+    , _handle(handle)
+    , _filtergraph(NULL)
+    , _clock(NULL)
+    , _mediatypeCallback(0L)
 {
 
 #if 0
@@ -727,7 +732,7 @@ CaptureFilter::CaptureFilter( vx_source_dshow* handle, AM_MEDIA_TYPE *mt, size_t
 	mediatypes[1].pUnk      = 0;
 
 
-	_capturepin = new CapturePin( handle, this, mediatypes, mediatypes_count );
+    _capturepin = new CapturePin( handle, this, mediatypes, mediatypes_count );
 }
 
 CaptureFilter::~CaptureFilter()
@@ -974,18 +979,18 @@ STDMETHODIMP CaptureFilter::Unregister()
 	return S_OK;
 }
 
-CapturePin::CapturePin(
-					   vx_source_dshow* handle,
-					   IBaseFilter* capturefilter,
-					   AM_MEDIA_TYPE *mediatypes,
-					   size_t mediatypes_count )
+CapturePin::CapturePin(vx_source* handle,
+                       IBaseFilter* capturefilter,
+                       AM_MEDIA_TYPE *mediatypes,
+                       size_t mediatypes_count
+                       )
 	: _refcount(1),
 	_connected_pin(NULL),
 	_filter(capturefilter),
 	_handle(handle),
 	_mediatypes(mediatypes),
 	_mediatype_count(mediatypes_count),
-	_allocator(NULL)
+    _allocator(NULL)
 {
 
 	InitializeCriticalSection(&_cs);
@@ -1201,17 +1206,29 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 
 	SSTT_DS_DEBUG("CapturePin::QueryAccept - In");
 
+    unsigned int fourCC = 0;
+
 	if( pmt->majortype == MEDIATYPE_Video )
 	{
-		std::string cs_name = "NONE";
 
-		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
+        fourCC = pmt->subtype.Data1;
+
+        std::string cs_name = "NONE";
+
+        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV))
+        {
+            fourCC = VX_E_COLOR_YUYV;
+
+            cs_name = "YV12";
+        } else
+        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
 		{
-			cs_name = "YV12";
+            cs_name = "YV12";
 		} else
 		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
 		{
 			cs_name = "RGB565";
+
 		} else
 		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_Y411))
 		{
@@ -1224,11 +1241,13 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_MJPG))
 		{
 
-			SSTT_DS_DEBUG("CapturePin::QueryAccept - Can't handle MJPEG");
+            fourCC = VX_E_COLOR_MJPEG;
 
-			return S_FALSE;
+//			SSTT_DS_DEBUG("CapturePin::QueryAccept - Can't handle MJPEG");
 
-			//MessageBox(0,"MJPEG","Command",MB_OK | MB_ICONINFORMATION);
+//			return S_FALSE;
+
+//			//MessageBox(0,"MJPEG","Command",MB_OK | MB_ICONINFORMATION);
 
 		} else {
 
@@ -1238,7 +1257,9 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 
 		SSTT_DS_DEBUG("CapturePin::QueryAccept - Intermediate");
 
-		if (0) //_handle->_enumerating)
+
+
+        if (static_cast<CaptureFilter*>(_filter)->_mediatypeCallback) //_handle->_enumerating)
 		{
 			SSTT_DS_DEBUG("CapturePin::QueryAccept - Enumeration Mode");
 
@@ -1253,6 +1274,9 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 				cs_name.c_str()
 				);
 #endif
+
+
+            (*static_cast<CaptureFilter*>(_filter)->_mediatypeCallback)(pmt);
 
 			return S_FALSE;
 		}
@@ -1660,7 +1684,7 @@ CapturePin::~CapturePin()
 
 
 CaptureEnumMediaTypes::CaptureEnumMediaTypes(
-	vx_source_dshow* handle, CapturePin *_p_pin,
+    vx_source* handle, CapturePin *_p_pin,
 	CaptureEnumMediaTypes *pEnumMediaTypes
 	)
 	: _pin( _p_pin ), _refcount( 1 ), _handle(handle), _position(0)
@@ -1798,9 +1822,9 @@ STDMETHODIMP CaptureEnumMediaTypes::Clone( IEnumMediaTypes **ppEnum )
 
 
 
-CaptureEnumPins::CaptureEnumPins( vx_source_dshow *handle,
-								 CaptureFilter *_p_filter,
-								 CaptureEnumPins *pEnumPins )
+CaptureEnumPins::CaptureEnumPins(vx_source *handle,
+                                 CaptureFilter *_p_filter,
+                                 CaptureEnumPins *pEnumPins )
 								 : _handle(handle), p_filter( _p_filter ), i_ref( 1 )
 {
 	SSTT_DS_DEBUG("CaptureEnumPins::CaptureEnumPins");
