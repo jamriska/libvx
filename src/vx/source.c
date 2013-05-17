@@ -102,6 +102,18 @@ const char* vx_source_default()
 	return _null;
 }
 
+
+
+void
+_vx_source_destroy(vx_object* source)
+{
+    /* resets all buffers */
+    vx_source_enumerate(VX_SOURCE_CAST(source),0,0);
+}
+
+
+
+
 void *
 vx_source_create(const char *n) {
 
@@ -138,8 +150,11 @@ vx_source_create(const char *n) {
 
 	vx_source_ref_init(result);
 
+    result->_object.destroy = _vx_source_destroy;
+
 	 return result;
 }
+
 
 
 int
@@ -147,6 +162,13 @@ vx_source_enumerate(vx_source *s, vx_device_description **devices, int *size)
 {
 	/* internal reset */
 	if (size == 0L) {
+
+        int i = 0;
+        for (i = 0;i < s->deviceCount;++i) {
+            free(s->devices[i].capabilities);
+            s->devices[i].capabilitiesCount = 0;
+        }
+
 		free(s->devices);
 		s->deviceCount = 0;
 		return 0;
@@ -161,12 +183,12 @@ vx_source_enumerate(vx_source *s, vx_device_description **devices, int *size)
 }
 
 int
-vx_source_open(vx_source *s, const char* n)
+vx_source_open(vx_source *s, const char* uuid,vx_device_capability* cap)
 {
 	s->sinkCount = 0;
 	s->sinks = 0;
 
-	return VX_SOURCE_CAST(s)->open(s,n);
+    return VX_SOURCE_CAST(s)->open(s,uuid,cap);
 }
 
 int
@@ -214,16 +236,68 @@ vx_source_add_sink(vx_source* source, vx_sink* sink)
 }
 
 
+
+
+/**
+ * @brief _vx_source_v4l2_addcapability
+ * @param newCap
+ * @param caps
+ * @param capcount
+ * @return
+ */
+int
+_vx_source_addcapability(const vx_device_capability* newCap,vx_device_capability** caps,unsigned int *capcount)
+{
+    vx_device_capability* oldCaps = *caps;
+    unsigned int oldCapCount = *capcount;
+    vx_device_capability* newCaps = 0;
+
+    if (oldCapCount == 0) {
+
+        newCaps = malloc(sizeof(struct vx_device_capability));
+
+    } else {
+
+        newCaps = realloc(oldCaps,sizeof(struct vx_device_capability)*(oldCapCount+1));
+
+    }
+
+    if (newCaps) {
+
+        memcpy(&newCaps[oldCapCount],newCap,sizeof(struct vx_device_capability));
+
+        *capcount = oldCapCount+1;
+        *caps = newCaps;
+
+        return 0;
+    }
+
+    return -1;
+
+}
+
 int
 _vx_send_frame(vx_source* source,const vx_frame* frame)
 {
 	int i = 0;
 	for(i = 0;i < source->sinkCount;++i) {
+
 		struct vx_sink* sink = (*source).sinks[i];
-		if (sink->sinkType == VX_SINK_TYPE_DIRECT)
-			sink->frameCallback(source,sink,frame,sink->frameCallbackUserData);
-		else
-			sink->copyCallback(source,sink,frame);
+
+        switch (sink->sinkType) {
+
+        case VX_SINK_TYPE_DIRECT:
+            sink->frameCallback(source,sink,frame,sink->frameCallbackUserData);
+            break;
+        case VX_SINK_TYPE_BUFFERED:
+            sink->copyCallback(source,sink,frame);
+            break;
+        case VX_SINK_TYPE_CONVERTED:
+            sink->conversionCallback(source,sink,frame);
+            break;
+        default:
+            break;
+        }
 	}
 
 	return 0;

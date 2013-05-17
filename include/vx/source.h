@@ -70,13 +70,42 @@ enum vx_device_type {
     VX_DEVICE_USERDEFINED   = 0xff
 };
 
+
+/**
+  * @brief describes speed of the capture capability
+  */
+typedef struct vx_device_capability_fps {
+
+    float numerator;
+    float denominator;
+
+} vx_device_capability_fps;
+
+/**
+  * @brief describes capabilities of the device
+  */
+typedef struct vx_device_capability {
+    int width;
+    int height;
+    unsigned int pixelFormat;
+
+    vx_device_capability_fps speed;
+
+} vx_device_capability;
+
+
 /**
   * @brief description of devices
   */
 typedef struct vx_device_description {
-    char* name;                             /**< UTF-8 encoded display name */
-    char* uuid;                             /**< platform specific UUID */
-    unsigned char deviceType;               /**< type of device */
+
+    char* name;                                 /**< UTF-8 encoded display name */
+    char* uuid;                                 /**< platform specific UUID */
+    unsigned char deviceType;                   /**< type of device */
+
+    struct vx_device_capability* capabilities;  /**< capabilities of the device */
+    unsigned int capabilitiesCount;             /**< number of entries in the capabilities*/
+
 } vx_device_description;
 
 
@@ -112,7 +141,7 @@ VX_API_CALL int vx_source_enumerate(vx_source *s, vx_device_description **device
   * @param settings - usually the uuid acquired by the enumerator
   * @return error code
   */
-VX_API_CALL int vx_source_open(vx_source *s,const char* settings);
+VX_API_CALL int vx_source_open(vx_source *s,const char* uuid,vx_device_capability* cap);
 
 /**
   * Closes the instance - stops the capture process first.

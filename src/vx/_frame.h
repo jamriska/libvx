@@ -26,61 +26,32 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the VideoExtractor Project.
 */
-#ifndef _LIBVX_INT_SOURCE_H_
-#define _LIBVX_INT_SOURCE_H_ 1
+#ifndef _LIBVX_INT_FRAME_H_
+#define _LIBVX_INT_FRAME_H_ 1
 
-#include "vx/source.h"
-#include "_object.h"
-#include "_sink.h"
+#include "vx/vx.h"
 
-typedef int (*vx_source_enumerate_cb_t)(vx_source * s);
-typedef int (*vx_source_open_cb_t)(vx_source * s,const char* uuid,vx_device_capability* cap);
-typedef int (*vx_source_close_cb_t)(vx_source * s);
-typedef int (*vx_source_set_state_cb_t)(vx_source * s,int newstate);
-typedef int (*vx_source_get_state_cb_t)(vx_source * s,int *state);
-typedef int (*vx_source_update_cb_t)(vx_source * s,unsigned int runloop);
-
-struct vx_source {
-
-	struct vx_object _object;
-
-	vx_source_enumerate_cb_t enumerate;
-	vx_source_open_cb_t open;
-	vx_source_close_cb_t close;
-	vx_source_get_state_cb_t get_state;
-	vx_source_set_state_cb_t set_state;
-	vx_source_update_cb_t update;
-
-	int state;
-
-	vx_sink** sinks;
-	int sinkCount;
-
-	vx_device_description* devices;
-	int deviceCount;
-
-} _vx_source;
-
-#if defined (__cplusplus)
-#define VX_CALL_C extern "C"
-#else
-#define VX_CALL_C extern
-#endif
+/**
+ * @brief create the header for the buffer
+ * @param w width of the buffer
+ * @param h height of the buffer
+ * @param fourCC FourCC based code
+ * @param frame only the internal structures are set, no memory is allocated
+ */
+void _vx_frame_create_header(int w, int h,unsigned int fourCC,vx_frame* frame);
 
 
-#define VX_SOURCE_CAST(ptr) \
-	((vx_source*)(ptr))
+/**
+ * @brief create the header and the buffer
+ * @param w width of the frame
+ * @param h height of the frame
+ * @param fourCC FourCC based code for declaring the pixelformat
+ * @param frame structures are set and memory for the buffer are allocated
+ */
+void _vx_frame_create(int w, int h,unsigned int fourCC,vx_frame* frame);
 
 
-/* internal callbacks to copy and to broadcast frames */
-
-VX_CALL_C int _vx_send_frame(vx_source* source, const vx_frame* frame);
-
-VX_CALL_C int _vx_broadcast(vx_source* source);
-
-VX_CALL_C int _vx_source_addcapability(const vx_device_capability* newCap,vx_device_capability** caps,unsigned int *capcount);
-
-
-
-
+void _vx_frame_draw_rectangle(int x, int y, int w, int h,
+							  int r, int g, int b, int a,
+							  vx_frame* frame);
 #endif

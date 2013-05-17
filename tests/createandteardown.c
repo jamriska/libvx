@@ -12,7 +12,7 @@ frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 
 int main(int argc, char** argv)
 {
-	int i = 0;
+    int i = 0, j = 0;
 
 	vx_source *source;
 	vx_sink *sink;
@@ -31,15 +31,28 @@ int main(int argc, char** argv)
 
 	for (i = 0; i < deviceCount;++i) {
 		fprintf(stdout,"Name: %s - UUID:%s\n",devices[i].name,devices[i].uuid);
+
+        for (j = 0; j < devices[i].capabilitiesCount;++j) {
+
+            vx_device_capability* devcap = &devices[i].capabilities[j];
+
+            char fourcc[5];
+            VX_FOURCC_TO_CHAR(devcap->pixelFormat,fourcc);
+            fourcc[4] = '\0';
+
+            fprintf(stdout,"\t%dx%d @%f/%f fps fourcc:%s\n",
+                     devcap->width,devcap->height,devcap->speed.numerator,devcap->speed.denominator,fourcc);
+        }
 	}
+
+    fflush(stdout);
 
 	sink = vx_sink_create("context",VX_SINK_TYPE_DIRECT);
 
 	vx_sink_set_frame_callback(sink,&frameCallback,0);
 
-	if (vx_source_open(source,devices[0].uuid) == 0)
 
-    if (vx_source_open(source,devices[0].uuid) == 0)
+    if (vx_source_open(source,devices[0].uuid,0) == 0)
 	{
 		vx_source_add_sink(source,sink);
 

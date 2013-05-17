@@ -48,8 +48,8 @@ int main(int argc, char** argv)
 
 	vx_sink_set_frame_callback(sink,&frameCallback,0);
 
-	if ((vx_source_open(source_1,UUID_1) == 0) &&
-		(vx_source_open(source_2,UUID_2) == 0))
+    if ((vx_source_open(source_1,UUID_1,0) == 0) &&
+        (vx_source_open(source_2,UUID_2,0) == 0))
 	{
 		vx_source_add_sink(source_1,sink);
 		vx_source_add_sink(source_2,sink);
