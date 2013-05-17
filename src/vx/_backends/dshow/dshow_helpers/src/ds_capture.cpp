@@ -704,6 +704,7 @@ CaptureFilter::CaptureFilter(vx_source *handle,
     , _filtergraph(NULL)
     , _clock(NULL)
     , _mediatypeCallback(0L)
+    , _captureCallback(0L)
 {
 
 #if 0
@@ -713,23 +714,23 @@ CaptureFilter::CaptureFilter(vx_source *handle,
 		cmodel_init_yuv(yuv_table);
 	}
 #endif
-	size_t mediatypes_count = 2;
+    size_t mediatypes_count = 2;
 	AM_MEDIA_TYPE *mediatypes = NULL;
 
 	mediatypes = (AM_MEDIA_TYPE *)CoTaskMemAlloc(sizeof(AM_MEDIA_TYPE) * mediatypes_count);
 
-	mediatypes[0].majortype = MEDIATYPE_Video;
-	mediatypes[0].subtype   = MEDIASUBTYPE_NULL;// MEDIASUBTYPE_RGB24;
-	mediatypes[0].pbFormat  = 0;
-	mediatypes[0].cbFormat  = 0;
-	mediatypes[0].pUnk      = 0;
+    mediatypes[0].majortype = MEDIATYPE_Video;
+    mediatypes[0].subtype   = MEDIASUBTYPE_NULL;// MEDIASUBTYPE_RGB24;
+    mediatypes[0].pbFormat  = 0;
+    mediatypes[0].cbFormat  = 0;
+    mediatypes[0].pUnk      = 0;
 
 	// needed for Windows Mobile
-	mediatypes[1].majortype = MEDIATYPE_Video;
-	mediatypes[1].subtype  =  MEDIASUBTYPE_RGB565;
-	mediatypes[1].pbFormat  = 0;
-	mediatypes[1].cbFormat  = 0;
-	mediatypes[1].pUnk      = 0;
+    mediatypes[1].majortype = MEDIATYPE_Video;
+    mediatypes[1].subtype  =  MEDIASUBTYPE_RGB565;
+    mediatypes[1].pbFormat  = 0;
+    mediatypes[1].cbFormat  = 0;
+    mediatypes[1].pUnk      = 0;
 
 
     _capturepin = new CapturePin( handle, this, mediatypes, mediatypes_count );
@@ -1510,26 +1511,48 @@ STDMETHODIMP CapturePin::GetAllocatorRequirements( ALLOCATOR_PROPERTIES *pProps 
 STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 {
 
-	SSTT_DS_DEBUG("CapturePin::Receive - Entry");
+    if (pSample && static_cast<CaptureFilter*>(_filter)->_captureCallback)
+    {
+        pSample->AddRef();
 
-//    fprintf(stdout,"%s 0x%x\n",__FUNCTION__,this->_handle);
+        (*static_cast<CaptureFilter*>(_filter)->_captureCallback)(pSample,&_connected_mediatype);
 
-	//sstt_autotrylock<sstt_mutex> trylock(_handle->get_parent()->_mutex);
+        pSample->Release();
+    }
 
-	if (pSample)
-	{
-		//EnterCriticalSection(&_cs);
+    return S_OK;
 
-		pSample->AddRef();
 
-		BYTE *ppBuffer;
 
-		pSample->GetPointer(&ppBuffer);
+//	SSTT_DS_DEBUG("CapturePin::Receive - Entry");
 
-        _temp.frame++;
-		_temp.data = ppBuffer;
+//	if (pSample)
 
-		_vx_send_frame((vx_source*)this->_handle,&_temp);
+//		pSample->AddRef();
+
+////		BYTE *ppBuffer;
+
+////		pSample->GetPointer(&ppBuffer);
+
+//    if (static_cast<CaptureFilter*>(_filter)->_captureCallback)
+//    {
+//        (*static_cast<CaptureFilter*>(_filter)->_captureCallback)(pSample,&_connected_mediatype);
+//    }
+
+//        pSample->Release();
+
+
+
+
+//        return S_OK;
+
+
+//}
+
+//        _temp.frame++;
+//		_temp.data = ppBuffer;
+
+//		_vx_send_frame((vx_source*)this->_handle,&_temp);
 
 
 
@@ -1614,16 +1637,12 @@ STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 			_handle->get_parent()->get_image(SSTT_IMAGE_GRAY),CV_BGR2GRAY);
 
 #endif
-		pSample->Release();
 
 		//_handle->get_parent()->submit();
 
 		//LeaveCriticalSection(&_cs);
 
-	}
-
-
-	return S_OK;
+//	}
 }
 
 STDMETHODIMP CapturePin::ReceiveMultiple( IMediaSample **pSamples,

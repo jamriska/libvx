@@ -29,6 +29,10 @@ struct EnumerateCallback
     virtual void operator()(const AM_MEDIA_TYPE *pmt ) = 0;
 };
 
+struct CaptureCallback
+{
+    virtual void operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt ) = 0;
+};
 
 class CapturePin : public IPin, public IMemInputPin
 {
@@ -120,6 +124,7 @@ class CaptureFilter : public IBaseFilter
     vx_source* _handle;
 
     EnumerateCallback* _mediatypeCallback;
+    CaptureCallback* _captureCallback;
 
 public:
 
@@ -157,10 +162,16 @@ public:
 	virtual ~CaptureFilter();
 
 
-    void SetEnumerateCallback(EnumerateCallback* cb)
+    inline void SetEnumerateCallback(EnumerateCallback* cb)
     {
         _mediatypeCallback = cb;
     }
+
+    inline void SetCaptureCallback(CaptureCallback* cb)
+    {
+        _captureCallback = cb;
+    }
+
 
 };
 
