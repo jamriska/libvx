@@ -19,10 +19,11 @@ int main(int argc, char** argv)
 	vx_device_description *devices;
 	int deviceCount;
 
-	if (argc > 1)
-		source = vx_source_create(argv[1]);
-	else
-		source = vx_source_create(0);
+    source = vx_source_create((argc > 1) ? argv[1] : 0);
+
+    if (source == 0) {
+        return -1;
+    }
 
 	vx_source_enumerate(source,&devices,&deviceCount);
 
@@ -35,12 +36,7 @@ int main(int argc, char** argv)
 
 	sink = vx_sink_create("context",VX_SINK_TYPE_DIRECT);
 
-	vx_sink_ref(sink);
-
 	vx_sink_set_frame_callback(sink,&frameCallback,0);
-
-
-//	vx_sink_unref(sink);
 
 	if (vx_source_open(source,devices[0].uuid) == 0)
 	{
@@ -50,8 +46,9 @@ int main(int argc, char** argv)
 
 		/* do something */
 		for (i = 0; i < 1000; ++i) {
-			//printf("%d\n",i);
 			vx_source_update(source,VX_SOURCE_UPDATE_PEEK);
+
+            usleep(1000);
 		}
 
 		vx_source_set_state(source,VX_SOURCE_STATE_STOP);
