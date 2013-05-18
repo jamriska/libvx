@@ -12,27 +12,22 @@
 */
 
 
-#ifndef CAPTURE_H_  
-#define CAPTURE_H_ 1
+#ifndef DS_CAPTURE_H
+#define DS_CAPTURE_H 1
 
 
 #include "ds_helper.h"
 
-#include "_source.h"
-#include "vx/frame.h"
-
-//typedef struct vx_source_dshow vx_source_dshow;
-
-
-struct EnumerateCallback
+struct QueryAcceptCallback
 {
-    virtual void operator()(const AM_MEDIA_TYPE *pmt ) = 0;
+    virtual HRESULT operator()(const AM_MEDIA_TYPE *pmt ) = 0;
 };
 
-struct CaptureCallback
+struct SampleCallback
 {
-    virtual void operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt ) = 0;
+    virtual HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt ) = 0;
 };
+
 
 class CapturePin : public IPin, public IMemInputPin
 {
@@ -52,20 +47,14 @@ class CapturePin : public IPin, public IMemInputPin
 
 	AM_MEDIA_TYPE _connected_mediatype;
 
-    vx_source* _handle;
-
-
 	IMemAllocator* _allocator;
 	ALLOCATOR_PROPERTIES _allocator_properties;
 
 	BOOL _readonly;
 
-	vx_frame _temp;
-
 public:
 
-    CapturePin(vx_source* handle,
-               IBaseFilter* capturefilter,
+    CapturePin(IBaseFilter* capturefilter,
                AM_MEDIA_TYPE *mediatypes,
                size_t mediatypes_count);
 
@@ -121,14 +110,12 @@ class CaptureFilter : public IBaseFilter
 
 	long i_ref;
 
-    vx_source* _handle;
-
-    EnumerateCallback* _mediatypeCallback;
-    CaptureCallback* _captureCallback;
+    QueryAcceptCallback* _mediatypeCallback;
+    SampleCallback* _captureCallback;
 
 public:
 
-    CaptureFilter(vx_source* handle, AM_MEDIA_TYPE *mt, size_t mt_count );
+    CaptureFilter(AM_MEDIA_TYPE *mt, size_t mt_count );
 
 	/* IUnknown methods */
 	STDMETHODIMP QueryInterface(REFIID riid, void **ppv);
@@ -162,12 +149,12 @@ public:
 	virtual ~CaptureFilter();
 
 
-    inline void SetEnumerateCallback(EnumerateCallback* cb)
+    inline void SetEnumerateCallback(QueryAcceptCallback* cb)
     {
         _mediatypeCallback = cb;
     }
 
-    inline void SetCaptureCallback(CaptureCallback* cb)
+    inline void SetCaptureCallback(SampleCallback* cb)
     {
         _captureCallback = cb;
     }
@@ -185,10 +172,8 @@ class CaptureEnumPins : public IEnumPins
 	int i_position;
 	long i_ref;
 
-    vx_source* _handle;
-
 public:
-    CaptureEnumPins( vx_source* handle, CaptureFilter *_p_filter,
+    CaptureEnumPins( CaptureFilter *_p_filter,
 		CaptureEnumPins *pEnumPins );
 	virtual ~CaptureEnumPins();
 
@@ -214,10 +199,8 @@ class CaptureEnumMediaTypes : public IEnumMediaTypes
 	size_t _position;
 	long _refcount;
 
-    vx_source* _handle;
-
 public:
-    CaptureEnumMediaTypes( vx_source* _handle, CapturePin *_p_pin,
+    CaptureEnumMediaTypes( CapturePin *_p_pin,
 		CaptureEnumMediaTypes *pEnumMediaTypes );
 
 	virtual ~CaptureEnumMediaTypes();

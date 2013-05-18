@@ -693,14 +693,12 @@ STDAPI CreateMemoryAllocator( IMemAllocator **ppAllocator )
 /****************************************************************************
 * Implementation of our dummy directshow filter class
 ****************************************************************************/
-CaptureFilter::CaptureFilter(vx_source *handle,
-        AM_MEDIA_TYPE *mt,
+CaptureFilter::CaptureFilter(AM_MEDIA_TYPE *mt,
         size_t mt_count
         )
     : _capturepin(NULL)
     , _state( State_Stopped )
     , i_ref( 1 )
-    , _handle(handle)
     , _filtergraph(NULL)
     , _clock(NULL)
     , _mediatypeCallback(0L)
@@ -733,7 +731,7 @@ CaptureFilter::CaptureFilter(vx_source *handle,
     mediatypes[1].pUnk      = 0;
 
 
-    _capturepin = new CapturePin( handle, this, mediatypes, mediatypes_count );
+    _capturepin = new CapturePin( this, mediatypes, mediatypes_count );
 }
 
 CaptureFilter::~CaptureFilter()
@@ -916,7 +914,7 @@ STDMETHODIMP CaptureFilter::EnumPins( IEnumPins ** ppEnum )
 
 	/* Create a new ref counted enumerator */
 
-	*ppEnum = new CaptureEnumPins( _handle, this, NULL );
+    *ppEnum = new CaptureEnumPins( this, NULL );
 
 	return *ppEnum == NULL ? E_OUTOFMEMORY : S_OK;
 }
@@ -980,15 +978,13 @@ STDMETHODIMP CaptureFilter::Unregister()
 	return S_OK;
 }
 
-CapturePin::CapturePin(vx_source* handle,
-                       IBaseFilter* capturefilter,
+CapturePin::CapturePin(IBaseFilter* capturefilter,
                        AM_MEDIA_TYPE *mediatypes,
                        size_t mediatypes_count
                        )
 	: _refcount(1),
 	_connected_pin(NULL),
 	_filter(capturefilter),
-	_handle(handle),
 	_mediatypes(mediatypes),
 	_mediatype_count(mediatypes_count),
     _allocator(NULL)
@@ -1196,7 +1192,6 @@ STDMETHODIMP CapturePin::QueryId( LPWSTR * Id )
 {
 	SSTT_DS_DEBUG("CapturePin::QueryId");
 
-
     *Id = L"libVX Capture Pin";
 
 	return S_OK;
@@ -1204,182 +1199,188 @@ STDMETHODIMP CapturePin::QueryId( LPWSTR * Id )
 
 STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
 {
+    SSTT_DS_DEBUG("CapturePin::QueryAccept - In");
 
-	SSTT_DS_DEBUG("CapturePin::QueryAccept - In");
+    // makes the system configurable from outside
+    if (static_cast<CaptureFilter*>(_filter)->_mediatypeCallback) {
+        return (*static_cast<CaptureFilter*>(_filter)->_mediatypeCallback)(pmt);
+    }
 
-    unsigned int fourCC = 0;
+    return S_FALSE;
 
-	if( pmt->majortype == MEDIATYPE_Video )
-	{
+////    unsigned int fourCC = 0;
 
-        fourCC = pmt->subtype.Data1;
+////	if( pmt->majortype == MEDIATYPE_Video )
+////	{
 
-        std::string cs_name = "NONE";
+////        fourCC = pmt->subtype.Data1;
 
-        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV))
-        {
-            fourCC = VX_E_COLOR_YUYV;
+////        std::string cs_name = "NONE";
 
-            cs_name = "YV12";
-        } else
-        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
-		{
-            cs_name = "YV12";
-		} else
-		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
-		{
-			cs_name = "RGB565";
+////        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV))
+////        {
+////            fourCC = VX_E_COLOR_YUYV;
 
-		} else
-		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_Y411))
-		{
-			cs_name = "Y411";
-		} else
-		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2))
-		{
-			cs_name = "YUY2";
-		} else
-		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_MJPG))
-		{
+////            cs_name = "YV12";
+////        } else
+////        if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
+////		{
+////            cs_name = "YV12";
+////		} else
+////		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
+////		{
+////			cs_name = "RGB565";
 
-            fourCC = VX_E_COLOR_MJPEG;
+////		} else
+////		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_Y411))
+////		{
+////			cs_name = "Y411";
+////		} else
+////		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2))
+////		{
+////			cs_name = "YUY2";
+////		} else
+////		if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_MJPG))
+////		{
 
-//			SSTT_DS_DEBUG("CapturePin::QueryAccept - Can't handle MJPEG");
+////            fourCC = VX_E_COLOR_MJPEG;
+
+//////			SSTT_DS_DEBUG("CapturePin::QueryAccept - Can't handle MJPEG");
+
+//////			return S_FALSE;
+
+//////			//MessageBox(0,"MJPEG","Command",MB_OK | MB_ICONINFORMATION);
+
+////		} else {
+
+////			SSTT_DS_DEBUG("CapturePin::QueryAccept - Unhandled format!");
+
+////		}
+
+////		SSTT_DS_DEBUG("CapturePin::QueryAccept - Intermediate");
+
+
+
+//        if (static_cast<CaptureFilter*>(_filter)->_mediatypeCallback) //_handle->_enumerating)
+//		{
+//			SSTT_DS_DEBUG("CapturePin::QueryAccept - Enumeration Mode");
+
+//#if defined(SSTT_VERBOSE_DEBUG)
+//			fprintf(stdout,"%s\nFormat\nwidth=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n\n",
+//				__FUNCTION__,
+//				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
+//				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
+//				10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
+//				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
+//				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes,
+//				cs_name.c_str()
+//				);
+//#endif
+
+
+//            (*static_cast<CaptureFilter*>(_filter)->_mediatypeCallback)(pmt);
 
 //			return S_FALSE;
+//		}
 
-//			//MessageBox(0,"MJPEG","Command",MB_OK | MB_ICONINFORMATION);
+//		if( pmt->pbFormat &&
+//			( (((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight == 0) ||
+//			(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth == 0) ) )
+//		{
+//			SSTT_DS_DEBUG("CapturePin::QueryAccept - Bogus mode!");
 
-		} else {
+//			return S_FALSE;
+//		} else {
 
-			SSTT_DS_DEBUG("CapturePin::QueryAccept - Unhandled format!");
+//			int actualWidth = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
+//			int actualHeight = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
 
-		}
+//			if ( true ==
+//                ( ignore_compare(actualWidth, /*_handle->_traits.minWidth*/640) |
+//                  ignore_compare(actualHeight,/*_handle->_traits.minHeight*/480)))
+//			{
+//				//printf("ignore %dx%d\n",actualWidth,actualHeight);
 
-		SSTT_DS_DEBUG("CapturePin::QueryAccept - Intermediate");
+//				SSTT_DS_DEBUG("CapturePin::QueryAccept - Skip format");
 
+//#if defined(SSTT_VERBOSE_DEBUG)
+//				fprintf(stdout,"%s Format\nwidth=%ld, height=%ld, fps=%f, bit count=%d, planes=%d\n\n",
+//					__FUNCTION__,
+//					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
+//					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
+//					10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
+//					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
+//					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes
+//					);
+//#endif
 
+//				return S_FALSE;
+//			}
 
-        if (static_cast<CaptureFilter*>(_filter)->_mediatypeCallback) //_handle->_enumerating)
-		{
-			SSTT_DS_DEBUG("CapturePin::QueryAccept - Enumeration Mode");
+////			/* we could also just skip the format! */
+////			SSTT_DS_DEBUG("CapturePin::QueryAccept - Ok");
 
-#if defined(SSTT_VERBOSE_DEBUG)
-			fprintf(stdout,"%s\nFormat\nwidth=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n\n",
-				__FUNCTION__,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
-				10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes,
-				cs_name.c_str()
-				);
-#endif
+////            if (1)
+////			{
+////                //vx_frame f;
 
+////                _temp.width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
+////                _temp.height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
 
-            (*static_cast<CaptureFilter*>(_filter)->_mediatypeCallback)(pmt);
+////				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12) ||
+////					//IsEqualGUID(pmt->subtype,MEDIASUBTYPE_I420) ||
+////					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_IYUV) ||
+////					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2) ||
+////					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV) ||
+////					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_UYVY)
+////					)
+////                {
+////                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
+////				}
+////#if !defined(_WIN32_WCE)
+////				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32)) {
+////                    _temp.colorModel = VX_E_COLOR_ABGR;
+////                    _temp.stride = _temp.width * ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount / 8;
+////                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,4);
+////				}
+////#endif
+////				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24)) {
+////                    _temp.colorModel = VX_E_COLOR_BGR24;
+////                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
+////				}
+////			}
 
-			return S_FALSE;
-		}
+////#if defined(SSTT_VERBOSE_DEBUG)
+////            fprintf(stdout,"%s - Selected format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
+////				__FUNCTION__,
+////				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
+////				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
+////				10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
+////				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
+////				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes,
+////				cs_name.c_str()
+////				);
+////#endif
 
-		if( pmt->pbFormat &&
-			( (((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight == 0) ||
-			(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth == 0) ) )
-		{
-			SSTT_DS_DEBUG("CapturePin::QueryAccept - Bogus mode!");
+////		}
 
-			return S_FALSE;
-		} else {
-
-			int actualWidth = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
-			int actualHeight = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
-
-			if ( true == 
-                ( ignore_compare(actualWidth, /*_handle->_traits.minWidth*/640) |
-                  ignore_compare(actualHeight,/*_handle->_traits.minHeight*/480)))
-			{
-				//printf("ignore %dx%d\n",actualWidth,actualHeight);
-
-				SSTT_DS_DEBUG("CapturePin::QueryAccept - Skip format");
-
-#if defined(SSTT_VERBOSE_DEBUG)
-				fprintf(stdout,"%s Format\nwidth=%ld, height=%ld, fps=%f, bit count=%d, planes=%d\n\n",
-					__FUNCTION__,
-					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
-					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
-					10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
-					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
-					((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes
-					);
-#endif
-
-				return S_FALSE;
-			}
-
-			/* we could also just skip the format! */
-			SSTT_DS_DEBUG("CapturePin::QueryAccept - Ok");
-
-            if (1)
-			{
-                //vx_frame f;
-
-                _temp.width = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth);
-                _temp.height = abs(((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight);
-
-				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12) ||
-					//IsEqualGUID(pmt->subtype,MEDIASUBTYPE_I420) ||
-					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_IYUV) ||
-					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2) ||
-					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV) ||
-					IsEqualGUID(pmt->subtype,MEDIASUBTYPE_UYVY)
-					)
-                {
-                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
-				}
-#if !defined(_WIN32_WCE)
-				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32)) {
-                    _temp.colorModel = VX_E_COLOR_ABGR;
-                    _temp.stride = _temp.width * ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount / 8;
-                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,4);
-				}
-#endif
-				if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24)) {
-                    _temp.colorModel = VX_E_COLOR_BGR24;
-                    //cvInitImageHeader(&_temp,size,IPL_DEPTH_8U,3);
-				}
-			}
-
-#if defined(SSTT_VERBOSE_DEBUG)
-            fprintf(stdout,"%s - Selected format: width=%ld, height=%ld, fps=%f, bitcount=%d, planes=%d (%s)\n",
-				__FUNCTION__,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight,
-				10000000.0f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame),
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount,
-				((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biPlanes,
-				cs_name.c_str()
-				);
-#endif
-
-		}
-
-	} else {
-	//	Log::Get().Printf("CapturePin::QueryAccept - Media Format is not a video");
-		return S_FALSE;
-	}
+////	} else {
+////	//	Log::Get().Printf("CapturePin::QueryAccept - Media Format is not a video");
+////		return S_FALSE;
+////	}
 
 
-	if( _connected_pin )
-	{
-//		Log::Get().Printf("CapturePin::QueryAccept - Freeing up pin");
+////	if( _connected_pin )
+////	{
+//////		Log::Get().Printf("CapturePin::QueryAccept - Freeing up pin");
 
-		uFreeMediaType( _connected_mediatype );
-		uCopyMediaType( &_connected_mediatype, pmt );
-	}
+////		uFreeMediaType( _connected_mediatype );
+////		uCopyMediaType( &_connected_mediatype, pmt );
+////	}
 
-    _temp.frame = 0;
+////    _temp.frame = 0;
 
-	SSTT_DS_DEBUG("CapturePin::QueryAccept - Out: Ok");
+//	SSTT_DS_DEBUG("CapturePin::QueryAccept - Out: Ok");
 
 	return S_OK;
 
@@ -1390,7 +1391,7 @@ STDMETHODIMP CapturePin::EnumMediaTypes( IEnumMediaTypes **ppEnum )
 
 	SSTT_DS_DEBUG("CapturePin::EnumMediaTypes");
 
-	*ppEnum = new CaptureEnumMediaTypes( _handle, this, NULL );
+    *ppEnum = new CaptureEnumMediaTypes( this, NULL );
 
 	if( *ppEnum == NULL ) return E_OUTOFMEMORY;
 
@@ -1510,14 +1511,15 @@ STDMETHODIMP CapturePin::GetAllocatorRequirements( ALLOCATOR_PROPERTIES *pProps 
 
 STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 {
-
     if (pSample && static_cast<CaptureFilter*>(_filter)->_captureCallback)
     {
         pSample->AddRef();
 
-        (*static_cast<CaptureFilter*>(_filter)->_captureCallback)(pSample,&_connected_mediatype);
+        HRESULT hr = (*static_cast<CaptureFilter*>(_filter)->_captureCallback)(pSample,&_connected_mediatype);
 
         pSample->Release();
+
+        return hr;
     }
 
     return S_OK;
@@ -1702,11 +1704,10 @@ CapturePin::~CapturePin()
 
 
 
-CaptureEnumMediaTypes::CaptureEnumMediaTypes(
-    vx_source* handle, CapturePin *_p_pin,
-	CaptureEnumMediaTypes *pEnumMediaTypes
-	)
-	: _pin( _p_pin ), _refcount( 1 ), _handle(handle), _position(0)
+CaptureEnumMediaTypes::CaptureEnumMediaTypes(CapturePin *_p_pin,
+    CaptureEnumMediaTypes *pEnumMediaTypes
+    )
+    : _pin( _p_pin ), _refcount( 1 ), _position(0)
 {
 	/* Hold a reference count on our filter */
 	_pin->AddRef();
@@ -1832,19 +1833,18 @@ STDMETHODIMP CaptureEnumMediaTypes::Reset()
 
 STDMETHODIMP CaptureEnumMediaTypes::Clone( IEnumMediaTypes **ppEnum )
 {
-	*ppEnum = new CaptureEnumMediaTypes( _handle, _pin, this );
+    *ppEnum = new CaptureEnumMediaTypes( _pin, this );
 	if( *ppEnum == NULL ) return E_OUTOFMEMORY;
 
 	return NOERROR;
-};
+}
 
 
 
 
-CaptureEnumPins::CaptureEnumPins(vx_source *handle,
-                                 CaptureFilter *_p_filter,
+CaptureEnumPins::CaptureEnumPins(CaptureFilter *_p_filter,
                                  CaptureEnumPins *pEnumPins )
-								 : _handle(handle), p_filter( _p_filter ), i_ref( 1 )
+                                 : p_filter( _p_filter ), i_ref( 1 )
 {
 	SSTT_DS_DEBUG("CaptureEnumPins::CaptureEnumPins");
 
@@ -1942,7 +1942,8 @@ STDMETHODIMP CaptureEnumPins::Skip( ULONG cPins )
 	}
 
 	return S_OK;
-};
+}
+
 STDMETHODIMP CaptureEnumPins::Reset()
 {
 	SSTT_DS_DEBUG("CaptureEnumPins::Reset");
@@ -1956,7 +1957,7 @@ STDMETHODIMP CaptureEnumPins::Clone( IEnumPins **ppEnum )
 {
 	SSTT_DS_DEBUG("CaptureEnumPins::Clone");
 
-	*ppEnum = new CaptureEnumPins( _handle,  p_filter, this );
+    *ppEnum = new CaptureEnumPins(  p_filter, this );
 	if( *ppEnum == NULL ) return E_OUTOFMEMORY;
 
 	return NOERROR;

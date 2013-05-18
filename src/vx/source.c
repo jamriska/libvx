@@ -160,6 +160,8 @@ vx_source_create(const char *n) {
 int
 vx_source_enumerate(vx_source *s, vx_device_description **devices, int *size)
 {
+	int res = 0;
+
 	/* internal reset */
 	if (size == 0L) {
 
@@ -174,7 +176,7 @@ vx_source_enumerate(vx_source *s, vx_device_description **devices, int *size)
 		return 0;
 	}
 
-	int res = VX_SOURCE_CAST(s)->enumerate(s);
+	res = VX_SOURCE_CAST(s)->enumerate(s);
 
 	*devices = s->devices;
 	*size = s->deviceCount;

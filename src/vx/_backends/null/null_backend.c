@@ -63,6 +63,9 @@ int vx_source_null_enumerate(vx_source* s)
 
 int vx_source_null_update(vx_source* s,unsigned int runloop)
 {
+	int w,h;
+	char* data;
+	int i;
 
     struct vx_source_null* null = VX_NULL_CAST(s);
 
@@ -75,14 +78,13 @@ int vx_source_null_update(vx_source* s,unsigned int runloop)
 
 		printf("%s %d\n",__FUNCTION__,__LINE__);
 
-		int w = 640;
-		int h = 480;
+		w = 640;
+		h = 480;
 
 		_vx_frame_create(w,h,VX_E_COLOR_RGBA,&null->fakeFrame);
 
-		char* data = null->fakeFrame.data;
+		data = null->fakeFrame.data;
 
-		int i;
 		for (    i = 0; i < null->fakeFrame.dataSize; ++i )				{
 			data[i] = 0xCC;
 		}

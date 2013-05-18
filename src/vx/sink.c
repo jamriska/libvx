@@ -87,67 +87,68 @@ either expressed or implied, of the VideoExtractor Project.
 
 //  }
 //}
-
-/* color conversion functions from Bart Nabbe. */
-/* corrected by Damien: bad coeficients in YUV2RGB */
-#define YUV2RGB(y, u, v, r, g, b)\
-    r = y + ((v*1436) >> 10);\
-    g = y - ((u*352 + v*731) >> 10);\
-    b = y + ((u*1814) >> 10);\
-    r = r < 0 ? 0 : r;\
-    g = g < 0 ? 0 : g;\
-    b = b < 0 ? 0 : b;\
-    r = r > 255 ? 255 : r;\
-    g = g > 255 ? 255 : g;\
-    b = b > 255 ? 255 : b
-
-static inline void _UYVYtoBGR( const vx_frame* inputSrc, vx_frame* destBgr)
-{
-
-    unsigned const char *src = (unsigned char*)inputSrc->data;
-
-    if (destBgr->data == 0)
-        _vx_frame_create(inputSrc->width,inputSrc->height,destBgr->colorModel,destBgr);
-
-    char *dest = (char*)destBgr->data;
-    unsigned int NumPixels = inputSrc->width * inputSrc->height;
-
-    register int i = (NumPixels << 1) - 1;
-    register int j = NumPixels + (NumPixels << 1) - 1;
-    register short y0, y1, u, v;
-    register int r, g, b;
-
-    while (i > 0) {
-#if 1
-
-        y1 = src[i--];
-        v = src[i--] - 128;
-        y0 = src[i--];
-        u = src[i--] - 128;
-        YUV2RGB(y1, u, v, r, g, b);
-        dest[j--] = r;
-        dest[j--] = g;
-        dest[j--] = b;
-        YUV2RGB(y0, u, v, r, g, b);
-        dest[j--] = r;
-        dest[j--] = g;
-        dest[j--] = b;
-#else
-        y1 = src[i--];
-        v = src[i--];
-        y0 = src[i--];
-        u = src[i--];
-        YUV2RGB(y1, u, v, r, g, b);
-        dest[j--] = b;
-        dest[j--] = g;
-        dest[j--] = r;
-        YUV2RGB(y0, u, v, r, g, b);
-        dest[j--] = b;
-        dest[j--] = g;
-        dest[j--] = r;
-#endif
-    }
-}
+//
+///* color conversion functions from Bart Nabbe. */
+///* corrected by Damien: bad coeficients in YUV2RGB */
+//#define YUV2RGB(y, u, v, r, g, b)\
+//    r = y + ((v*1436) >> 10);\
+//    g = y - ((u*352 + v*731) >> 10);\
+//    b = y + ((u*1814) >> 10);\
+//    r = r < 0 ? 0 : r;\
+//    g = g < 0 ? 0 : g;\
+//    b = b < 0 ? 0 : b;\
+//    r = r > 255 ? 255 : r;\
+//    g = g > 255 ? 255 : g;\
+//    b = b > 255 ? 255 : b; \
+//
+//
+//static void _UYVYtoBGR( const vx_frame* inputSrc, vx_frame* destBgr)
+//{
+//
+//    unsigned const char *src = (unsigned char*)inputSrc->data;
+//
+//    if (destBgr->data == 0)
+//        _vx_frame_create(inputSrc->width,inputSrc->height,destBgr->colorModel,destBgr);
+//
+//    char *dest = (char*)destBgr->data;
+//    unsigned int NumPixels = inputSrc->width * inputSrc->height;
+//
+//    register int i = (NumPixels << 1) - 1;
+//    register int j = NumPixels + (NumPixels << 1) - 1;
+//    register short y0, y1, u, v;
+//    register int r, g, b;
+//
+//    while (i > 0) {
+//#if 1
+//
+//        y1 = src[i--];
+//        v = src[i--] - 128;
+//        y0 = src[i--];
+//        u = src[i--] - 128;
+//        YUV2RGB(y1, u, v, r, g, b);
+//        dest[j--] = r;
+//        dest[j--] = g;
+//        dest[j--] = b;
+//        YUV2RGB(y0, u, v, r, g, b);
+//        dest[j--] = r;
+//        dest[j--] = g;
+//        dest[j--] = b;
+//#else
+//        y1 = src[i--];
+//        v = src[i--];
+//        y0 = src[i--];
+//        u = src[i--];
+//        YUV2RGB(y1, u, v, r, g, b);
+//        dest[j--] = b;
+//        dest[j--] = g;
+//        dest[j--] = r;
+//        YUV2RGB(y0, u, v, r, g, b);
+//        dest[j--] = b;
+//        dest[j--] = g;
+//        dest[j--] = r;
+//#endif
+//    }
+//}
 
 static int
 _vx_frame_conversion(const vx_frame* in,vx_frame* out)
@@ -169,11 +170,11 @@ _vx_frame_conversion(const vx_frame* in,vx_frame* out)
     switch (in->colorModel) {
     case VX_E_COLOR_YUYV:
         if (out->colorModel == VX_E_COLOR_BGR24) {
-            _UYVYtoBGR(in,out);
+//            _UYVYtoBGR(in,out);
 //            convert_YUYV_to_RGB24(in,out);
             done++;
         }
-        return;
+        return 0;
         break;
     default:
 //        fprintf(stdout,"Unhandled input format: %d\n",in->colorModel);

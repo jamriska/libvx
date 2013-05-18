@@ -155,7 +155,11 @@ if(DIRECTSHOW_FOUND)
 	include_directories(${DIRECTSHOW_INCLUDE_DIRS})
 
 	list(APPEND backend_srcs
+			_backends/dshow/dshow_helpers/include/ds_capture.h
 			_backends/dshow/dshow_helpers/src/ds_capture.cpp
+			_backends/dshow/dshow_helpers/include/ds_control.h
+			_backends/dshow/dshow_helpers/src/ds_control.cpp
+			_backends/dshow/dshow_helpers/include/cpropertybag.h
 			_backends/dshow/dshow_helpers/src/cpropertybag.cpp
 			)
 

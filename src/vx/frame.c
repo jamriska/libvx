@@ -43,9 +43,12 @@ void _vx_frame_draw_rectangle(int x, int y, int w, int h,
 							  int r, int g, int b, int a,
 							  vx_frame* frame)
 {
-	int bytePerPixel = frame->bpp >> 3;
+	int i,j;
 
 	int offsets[4];
+
+	int bytePerPixel = frame->bpp >> 3;
+	char* row;
 
 	switch(frame->colorModel) {
 	case VX_E_COLOR_RGB24:
@@ -71,10 +74,9 @@ void _vx_frame_draw_rectangle(int x, int y, int w, int h,
 		break;
 	}
 
-	int i,j;
 	for (    i = y; i < y+h; ++i )
 	{
-		char* row = frame->data + i *  frame->stride;
+		row = (char*)frame->data + i *  frame->stride;
 		for (    j = x; j < x+w; ++j )
 		{
 			if(offsets[0] >= 0) row[bytePerPixel*j + offsets[0]] = r;

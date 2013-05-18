@@ -338,10 +338,11 @@ UDSHOW_API HRESULT GetCaptureDeviceWithUID(IBaseFilter** ppCap, const char* UID)
 	}
 
 	// enumerate video capture devices
-	IEnumMoniker *pEm;
-	pCreateDevEnum->CreateClassEnumerator( CLSID_VideoInputDeviceCategory, &pEm, 0 );
+    IEnumMoniker *pEm(0L);
 
-	if( !pEm )
+    hr = pCreateDevEnum->CreateClassEnumerator( CLSID_VideoInputDeviceCategory, &pEm, 0 );
+
+    if( hr != S_OK )
 	{
 
 		MessageBox(NULL,
@@ -508,6 +509,8 @@ HRESULT GetCaptureDevice(IBaseFilter **ppCap)
 
 	pCreateDevEnum->Release();
 	pEm->Release();
+
+    fflush(stderr);
 
 	return hr;
 }

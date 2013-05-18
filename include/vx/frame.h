@@ -64,11 +64,12 @@ enum vx_colormodel {
     VX_E_COLOR_BGRA                 = VX_FOURCC('B','G','R','A'),
     VX_E_COLOR_RGB565               = VX_FOURCC('R','G','B','6'),
     VX_E_COLOR_RGB555               = VX_FOURCC('R','G','B','5'),
-    VX_E_COLOR_YU12                 = VX_FOURCC('Y','V','1','2'),
+    VX_E_COLOR_YV12                 = VX_FOURCC('Y','V','1','2'),
     VX_E_COLOR_YUYV                 = VX_FOURCC('Y','U','Y','V'),
+    VX_E_COLOR_YUY2                 = VX_FOURCC('Y','U','Y','2'),
     VX_E_COLOR_422P                 = VX_FOURCC('4','2','2','P'),
     /* aliases */
-    VX_E_COLOR_420P                 = VX_E_COLOR_YU12,
+    VX_E_COLOR_420P                 = VX_E_COLOR_YV12,
     VX_E_COLOR_422I                 = VX_E_COLOR_YUYV,
 
     /* compressed */
