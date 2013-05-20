@@ -1,7 +1,5 @@
 #include "ds_control.h"
 
-
-
 DirectShowControl::DirectShowControl()
     : _SourceFilter(0)
 	, _ProxyFilter(0)
@@ -13,7 +11,7 @@ DirectShowControl::DirectShowControl()
     , _rendererType(kCustomSink)
     , _allowDropFrames(false)
     , _saveGraph(false)
-    , _useColorSpaceFilter(false)
+    , _useColorSpaceFilter(true)
 {
     _InitCOM();
     _InitGraphBuilder();
@@ -22,9 +20,11 @@ DirectShowControl::DirectShowControl()
 
 bool DirectShowControl::Open( const char *uuid )
 {
-    if (_InitCaptureDevice(uuid))
-        if (_InitRenderer())
-            return true;
+    if (_InitColorSpaceFilter())
+        if (_InitCaptureDevice(uuid))
+            if (_InitRenderer())
+                return true;
+
 	return false;
 }
 
@@ -40,6 +40,12 @@ bool DirectShowControl::Stop()
 
 DirectShowControl::~DirectShowControl()
 {
+
+    #ifndef SAFE_RELEASE
+        #define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
+    #endif
+
+
 	Stop();
 
 	SAFE_RELEASE(_MediaControl);
@@ -61,14 +67,14 @@ void DirectShowControl::OnError( const char* error ) const
 void DirectShowControl::SetEnumerateCallback(QueryAcceptCallback *cb)
 {
     if (_SinkFilter && (_rendererType == kCustomSink)) {
-        static_cast<CaptureFilter*>(_SinkFilter)->SetEnumerateCallback(cb);
+        static_cast<CaptureFilter*>(_SinkFilter)->SetQueryAcceptCallback(cb);
     }
 }
 
 void DirectShowControl::SetCaptureCallback(SampleCallback *cb)
 {
     if (_SinkFilter && (_rendererType == kCustomSink)) {
-        static_cast<CaptureFilter*>(_SinkFilter)->SetCaptureCallback(cb);
+        static_cast<CaptureFilter*>(_SinkFilter)->SetSampleCallback(cb);
     }
 }
 

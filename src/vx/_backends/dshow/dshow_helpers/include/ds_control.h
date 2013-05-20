@@ -16,10 +16,6 @@
 
 #include "ds_capture.h"
 
-#ifndef SAFE_RELEASE
-#define SAFE_RELEASE(x) if (x) { x->Release(); x = NULL; }
-#endif
-
 
 class DirectShowControl {
 

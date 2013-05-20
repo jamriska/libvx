@@ -149,12 +149,12 @@ public:
 	virtual ~CaptureFilter();
 
 
-    inline void SetEnumerateCallback(QueryAcceptCallback* cb)
+    inline void SetQueryAcceptCallback(QueryAcceptCallback* cb)
     {
         _mediatypeCallback = cb;
     }
 
-    inline void SetCaptureCallback(SampleCallback* cb)
+    inline void SetSampleCallback(SampleCallback* cb)
     {
         _captureCallback = cb;
     }

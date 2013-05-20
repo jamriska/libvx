@@ -800,7 +800,7 @@ STDMETHODIMP CaptureFilter::GetClassID(CLSID *pClsID)
 	SSTT_DS_DEBUG("CaptureFilter::GetClassID");
 
 	return E_NOTIMPL;
-};
+}
 
 /* IMediaFilter methods */
 STDMETHODIMP CaptureFilter::GetState(DWORD dwMSecs, FILTER_STATE *State)
@@ -940,22 +940,23 @@ STDMETHODIMP CaptureFilter::QueryFilterInfo( FILTER_INFO * pInfo )
 
 
 	return NOERROR;
-};
+}
+
 STDMETHODIMP CaptureFilter::JoinFilterGraph( IFilterGraph * pGraph,
 											LPCWSTR pName )
 {
 	SSTT_DS_DEBUG("CaptureFilter::JoinFilterGraph");
 
-
 	_filtergraph = pGraph;
 
 	return NOERROR;
-};
+}
+
 STDMETHODIMP CaptureFilter::QueryVendorInfo( LPWSTR* pVendorInfo )
 {
 	SSTT_DS_DEBUG("CaptureFilter::QueryVendorInfo");
 	return E_NOTIMPL;
-};
+}
 
 /* Custom methods */
 CapturePin *CaptureFilter::CustomGetPin()
@@ -1511,6 +1512,7 @@ STDMETHODIMP CapturePin::GetAllocatorRequirements( ALLOCATOR_PROPERTIES *pProps 
 
 STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 {
+
     if (pSample && static_cast<CaptureFilter*>(_filter)->_captureCallback)
     {
         pSample->AddRef();

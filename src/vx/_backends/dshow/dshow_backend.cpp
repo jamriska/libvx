@@ -24,9 +24,66 @@
 #include <stdio.h>
 
 
+inline static
+void AM2VX(const AM_MEDIA_TYPE* pmt,unsigned int& pixFormat)
+{
+    if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
+        pixFormat = VX_E_COLOR_RGB565;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB555))
+        pixFormat = VX_E_COLOR_RGB555;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB32))
+        pixFormat = VX_E_COLOR_RGBA;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB8))
+        pixFormat = VX_E_COLOR_RGBA;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24))
+        pixFormat = VX_E_COLOR_RGB24;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32))
+        pixFormat = VX_E_COLOR_ARGB;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV))
+        pixFormat = VX_E_COLOR_YUYV;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2))
+        pixFormat = VX_E_COLOR_YUY2;
+    else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
+        pixFormat = VX_E_COLOR_YV12;
+    else
+        pixFormat = 0;
+}
+
+
+struct vxSampleCallback : SampleCallback {
+
+    vx_frame sampleWrapper;
+    vx_source* _source;
+
+    vxSampleCallback(vx_source* parent)
+        : _source(parent)
+    {}
+
+    void SetParent(vx_source* parent = 0)
+    {
+        _source = parent;
+    }
+
+    HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt )
+    {
+//        pSample->GetPointer((BYTE**)&sampleWrapper.data);
+
+//        sampleWrapper.frame++;
+//        sampleWrapper.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
+//        sampleWrapper.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
+
+//        _vx_send_frame(_source,&sampleWrapper);
+
+        fprintf(stdout,"Sample\n");
+        fflush(stdout);
+    }
+};
+
 typedef struct vx_source_dshow {
 
     vx_source super;
+
+    vxSampleCallback sampler;
 
     DirectShowControl* dsCtrl;
 
@@ -38,13 +95,75 @@ typedef struct vx_source_dshow {
     ((vx_source_dshow*)(ptr))
 
 
+struct vxOpenDeviceCallback : QueryAcceptCallback {
+
+    vx_device_capability* _cap;
+
+    vxOpenDeviceCallback(vx_device_capability* cap)
+        : _cap(cap) {}
+
+    virtual HRESULT operator ()(const AM_MEDIA_TYPE* pmt)
+    {
+        if( pmt->majortype == MEDIATYPE_Video )
+        {
+
+            vx_device_capability newCap;
+
+            newCap.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
+            newCap.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
+
+            AM2VX(pmt,newCap.pixelFormat);
+
+            newCap.speed.numerator = 1.f;
+            newCap.speed.denominator = 10000000.f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame);
+
+            fprintf(stdout,"Go\n");
+            fflush(stdout);
+
+            if (newCap.width && newCap.height && newCap.pixelFormat)
+            {
+                if (_cap == 0)
+                    return S_OK;
+                if (_cap->height == newCap.height &&
+                        _cap->width == newCap.width &&
+                        _cap->pixelFormat == newCap.pixelFormat)
+                {
+
+                    fprintf(stdout,"Go\n");
+                    fflush(stdout);
+                    return S_OK;
+                }
+            }
+
+        }
+
+        return S_FALSE;
+    }
+};
+
+
 int vx_source_dshow_open(vx_source* s, const char* uuid,vx_device_capability* c)
 {
     vx_source_dshow* dsSource = VX_DSHOW_CAST(s);
     dsSource->dsCtrl = new DirectShowControl();
-    //"@device:pnp:\\\\?\\usb#vid_05ac&pid_8507&mi_00#7&38e271ba&0&0000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global"
 
-    return (dsSource->dsCtrl->Open(uuid)) ? 0 : -1;
+    vxOpenDeviceCallback cb(c);
+    dsSource->sampler.SetParent((vx_source*)dsSource);
+
+    if (dsSource->dsCtrl->Open(uuid))
+    {
+        dsSource->dsCtrl->SetEnumerateCallback(&cb);
+
+        dsSource->dsCtrl->SetCaptureCallback(&dsSource->sampler);
+
+        dsSource->dsCtrl->ConnectComponents();
+
+        dsSource->dsCtrl->SetEnumerateCallback(0);
+
+        return 0;
+    }
+
+    return -1;
 }
 
 int vx_source_dshow_close(vx_source* s)
@@ -96,26 +215,7 @@ struct vxEnumerateCallback : QueryAcceptCallback {
             newCap.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
             newCap.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
 
-            if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB565))
-                newCap.pixelFormat = VX_E_COLOR_RGB565;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB555))
-                newCap.pixelFormat = VX_E_COLOR_RGB555;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB32))
-                newCap.pixelFormat = VX_E_COLOR_RGBA;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB8))
-                newCap.pixelFormat = VX_E_COLOR_RGBA;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_RGB24))
-                newCap.pixelFormat = VX_E_COLOR_RGB24;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_ARGB32))
-                newCap.pixelFormat = VX_E_COLOR_ARGB;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUYV))
-                newCap.pixelFormat = VX_E_COLOR_YUYV;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YUY2))
-                newCap.pixelFormat = VX_E_COLOR_YUY2;
-            else if (IsEqualGUID(pmt->subtype,MEDIASUBTYPE_YV12))
-                newCap.pixelFormat = VX_E_COLOR_YV12;
-            else
-                newCap.pixelFormat = 0;
+            AM2VX(pmt,newCap.pixelFormat);
 
             newCap.speed.numerator = 1.f;
             newCap.speed.denominator = 10000000.f/((float)((VIDEOINFOHEADER *)pmt->pbFormat)->AvgTimePerFrame);
