@@ -13,8 +13,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/mman.h>
-#include <linux/videodev2.h>
 #include <glob.h>
+#include <linux/videodev2.h>
 
 #define V4L_BUFFERS_COUNT 4
 
