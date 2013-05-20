@@ -113,7 +113,7 @@
 			frame.bpp = 24;
 			break;
 		case kCVPixelFormatType_422YpCbCr8_yuvs:
-			frame.colorModel = VX_E_COLOR_YU12;
+			frame.colorModel = VX_E_COLOR_YV12;
 			frame.bpp = 24;
 			break;
 		default:
@@ -235,7 +235,7 @@ int vx_source_avfoundation_enumerate(vx_source* s)
 	return 0;
 }
 
-int vx_source_avfoundation_open(vx_source* s, const char* n)
+int vx_source_avfoundation_open(vx_source* s, const char* n,vx_device_capability* cap)
 {
 	int retCode = -1;
 

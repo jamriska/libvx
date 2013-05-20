@@ -228,7 +228,7 @@ int vx_source_qtkit_enumerate(vx_source* s)
 	return 0;
 }
 
-int vx_source_qtkit_open(vx_source* s, const char* n)
+int vx_source_qtkit_open(vx_source* s, const char* n,vx_device_capability* cap)
 {
 	int retCode = -1;
 

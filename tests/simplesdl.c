@@ -21,16 +21,16 @@ void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, 
 	mask[0]=mask[1]=mask[2]=mask[3]=0;
 
 	switch (frame->colorModel) {
-    case VX_E_COLOR_BGR24:
-        mask[0]=0xff0000;
-        mask[1]=0x00FF00;
-        mask[2]=0x0000FF;
-        mask[3]=0x0;
-        break;
+	case VX_E_COLOR_BGR24:
+		mask[0]=0xff0000;
+		mask[1]=0x00FF00;
+		mask[2]=0x0000FF;
+		mask[3]=0x0;
+		break;
 	case VX_E_COLOR_RGB24:
 		mask[0]=0x0000ff;
 		mask[1]=0x00ff00;
-        mask[2]=0xff0000;
+		mask[2]=0xff0000;
 		mask[3]=0x000000;
 		break;
 	case VX_E_COLOR_ARGB:
@@ -52,12 +52,12 @@ void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, 
 		mask[3]=0x000000FF;
 		break;
 	default:
-    {
-        char fourCC[5]; fourCC[4] = '\0';
-        VX_FOURCC_TO_CHAR(frame->colorModel,fourCC);
-        fprintf(stderr,"Unhandled format %s\n",fourCC);
-        return;
-    }
+	{
+		char fourCC[5]; fourCC[4] = '\0';
+		VX_FOURCC_TO_CHAR(frame->colorModel,fourCC);
+		fprintf(stderr,"Unhandled format %s\n",fourCC);
+		return;
+	}
 	}
 
 	SDL_Surface* videoImage =
@@ -77,7 +77,7 @@ void vxCaptureCallback(vx_source* source, vx_sink* sink, const vx_frame* frame, 
 	if (0 != SDL_BlitSurface(videoImage, 0, screen, 0))
 		fprintf(stderr,"Can't blit!\n");
 
-    SDL_Flip(screen);
+	SDL_Flip(screen);
 
 	SDL_FreeSurface(videoImage);
 
@@ -111,17 +111,17 @@ void sdlInit()
 
 void vxInit()
 {
-    vx_device_description *devices = 0L;
-    int deviceCount = 0L;
+	vx_device_description *devices = 0L;
+	int deviceCount = 0L;
 
 	int i;
 
-    source = vx_source_create("null");
+	source = vx_source_create(0);
 
-    if (source == 0) {
-        fprintf(stderr,"Error loading backend!\n");
-        exit(-1);
-    }
+	if (source == 0) {
+		fprintf(stderr,"Error loading backend!\n");
+		exit(-1);
+	}
 
 	vx_source_enumerate(source,&devices,&deviceCount);
 
@@ -136,7 +136,7 @@ void vxInit()
 
 	vx_sink_set_frame_callback(sink,&vxCaptureCallback,0);
 
-    if (vx_source_open(source,devices[0].uuid,0) == 0)
+	if (vx_source_open(source,devices[0].uuid,0) == 0)
 	{
 		vx_source_add_sink(source,sink);
 
