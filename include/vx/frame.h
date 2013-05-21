@@ -93,7 +93,7 @@ typedef struct vx_frame {
 	unsigned int height;            /**< height of frame in pixel */
 	unsigned int stride;            /**< bytes per row */
 
-	int colorModel;                 /**< pixel format and layout */
+    unsigned int colorModel;        /**< pixel format and layout */
 	unsigned short bpp;				/**< bits per pixel */
 
 	int dataType;                   /**< data format of buffer */

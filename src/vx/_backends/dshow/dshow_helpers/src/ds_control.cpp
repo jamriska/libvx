@@ -11,7 +11,7 @@ DirectShowControl::DirectShowControl()
     , _rendererType(kCustomSink)
     , _allowDropFrames(false)
     , _saveGraph(false)
-    , _useColorSpaceFilter(true)
+    , _useColorSpaceFilter(false)
 {
     _InitCOM();
     _InitGraphBuilder();
@@ -64,14 +64,14 @@ void DirectShowControl::OnError( const char* error ) const
     fflush(stderr);
 }
 
-void DirectShowControl::SetEnumerateCallback(QueryAcceptCallback *cb)
+void DirectShowControl::SetQueryAcceptCallback(QueryAcceptCallback *cb)
 {
     if (_SinkFilter && (_rendererType == kCustomSink)) {
         static_cast<CaptureFilter*>(_SinkFilter)->SetQueryAcceptCallback(cb);
     }
 }
 
-void DirectShowControl::SetCaptureCallback(SampleCallback *cb)
+void DirectShowControl::SetSampleCallback(SampleCallback *cb)
 {
     if (_SinkFilter && (_rendererType == kCustomSink)) {
         static_cast<CaptureFilter*>(_SinkFilter)->SetSampleCallback(cb);

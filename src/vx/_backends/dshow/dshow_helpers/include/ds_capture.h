@@ -20,14 +20,16 @@
 
 struct QueryAcceptCallback
 {
-    virtual HRESULT operator()(const AM_MEDIA_TYPE *pmt ) = 0;
+    virtual WINAPI HRESULT operator()(const AM_MEDIA_TYPE *pmt ) = 0;
 };
 
 struct SampleCallback
 {
-    virtual HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt ) = 0;
+    virtual WINAPI HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt ) = 0;
 };
 
+
+class CaptureFilter;
 
 class CapturePin : public IPin, public IMemInputPin
 {
@@ -36,6 +38,7 @@ class CapturePin : public IPin, public IMemInputPin
 
 	CRITICAL_SECTION _cs;
 
+    AM_MEDIA_TYPE _connected_mediatype;
 
 	AM_MEDIA_TYPE *_mediatypes;
 	size_t _mediatype_count;
@@ -43,9 +46,8 @@ class CapturePin : public IPin, public IMemInputPin
 	long _refcount;
 
 	IPin* _connected_pin;
-	IBaseFilter* _filter;
+    CaptureFilter* _captureFilter;
 
-	AM_MEDIA_TYPE _connected_mediatype;
 
 	IMemAllocator* _allocator;
 	ALLOCATOR_PROPERTIES _allocator_properties;
@@ -54,7 +56,7 @@ class CapturePin : public IPin, public IMemInputPin
 
 public:
 
-    CapturePin(IBaseFilter* capturefilter,
+    CapturePin(CaptureFilter* capturefilter,
                AM_MEDIA_TYPE *mediatypes,
                size_t mediatypes_count);
 
@@ -145,19 +147,13 @@ public:
 	STDMETHODIMP Unregister();
 
 	/* Custom methods */
-	CapturePin *CustomGetPin();
+    CapturePin *GetCapturePin();
 	virtual ~CaptureFilter();
 
+    STDMETHODIMP SetSampleCallback(SampleCallback* cb);
+    STDMETHODIMP SetQueryAcceptCallback(QueryAcceptCallback* cb);
 
-    inline void SetQueryAcceptCallback(QueryAcceptCallback* cb)
-    {
-        _mediatypeCallback = cb;
-    }
 
-    inline void SetSampleCallback(SampleCallback* cb)
-    {
-        _captureCallback = cb;
-    }
 
 
 };

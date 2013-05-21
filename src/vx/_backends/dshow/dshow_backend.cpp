@@ -57,25 +57,34 @@ struct vxSampleCallback : SampleCallback {
 
     vxSampleCallback(vx_source* parent)
         : _source(parent)
-    {}
-
-    void SetParent(vx_source* parent = 0)
     {
-        _source = parent;
+        memset(&sampleWrapper,0,sizeof(vx_frame));
     }
 
-    HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt )
+    WINAPI HRESULT operator()(IMediaSample *pSample, const AM_MEDIA_TYPE *pmt )
     {
-//        pSample->GetPointer((BYTE**)&sampleWrapper.data);
+        pSample->GetPointer((BYTE**)&sampleWrapper.data);
 
-//        sampleWrapper.frame++;
-//        sampleWrapper.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
-//        sampleWrapper.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
+        AM2VX(pmt,sampleWrapper.colorModel);
 
-//        _vx_send_frame(_source,&sampleWrapper);
+        sampleWrapper.width = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biWidth;
+        sampleWrapper.height = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biHeight;
+        sampleWrapper.bpp = ((VIDEOINFOHEADER *)pmt->pbFormat)->bmiHeader.biBitCount;
 
-        fprintf(stdout,"Sample\n");
-        fflush(stdout);
+
+        /* http://msdn.microsoft.com/en-us/library/windows/desktop/dd318229%28v=vs.85%29.aspx */
+        sampleWrapper.stride = ((((sampleWrapper.width * sampleWrapper.bpp) + 31) & ~31) >> 3);
+
+
+        _vx_send_frame(_source,&sampleWrapper);
+
+        _vx_broadcast(_source);
+
+
+        sampleWrapper.frame++;
+
+        return S_OK;
+
     }
 };
 
@@ -83,7 +92,7 @@ typedef struct vx_source_dshow {
 
     vx_source super;
 
-    vxSampleCallback sampler;
+    vxSampleCallback* sampler;
 
     DirectShowControl* dsCtrl;
 
@@ -102,7 +111,8 @@ struct vxOpenDeviceCallback : QueryAcceptCallback {
     vxOpenDeviceCallback(vx_device_capability* cap)
         : _cap(cap) {}
 
-    virtual HRESULT operator ()(const AM_MEDIA_TYPE* pmt)
+    virtual
+    WINAPI HRESULT operator ()(const AM_MEDIA_TYPE* pmt)
     {
         if( pmt->majortype == MEDIATYPE_Video )
         {
@@ -129,7 +139,7 @@ struct vxOpenDeviceCallback : QueryAcceptCallback {
                         _cap->pixelFormat == newCap.pixelFormat)
                 {
 
-                    fprintf(stdout,"Go\n");
+                    fprintf(stdout,"Go 2\n");
                     fflush(stdout);
                     return S_OK;
                 }
@@ -148,17 +158,19 @@ int vx_source_dshow_open(vx_source* s, const char* uuid,vx_device_capability* c)
     dsSource->dsCtrl = new DirectShowControl();
 
     vxOpenDeviceCallback cb(c);
-    dsSource->sampler.SetParent((vx_source*)dsSource);
 
     if (dsSource->dsCtrl->Open(uuid))
     {
-        dsSource->dsCtrl->SetEnumerateCallback(&cb);
 
-        dsSource->dsCtrl->SetCaptureCallback(&dsSource->sampler);
+        dsSource->sampler = new vxSampleCallback(s);
+
+        dsSource->dsCtrl->SetSampleCallback(dsSource->sampler);
+
+        dsSource->dsCtrl->SetQueryAcceptCallback(&cb);
 
         dsSource->dsCtrl->ConnectComponents();
 
-        dsSource->dsCtrl->SetEnumerateCallback(0);
+        dsSource->dsCtrl->SetQueryAcceptCallback(0);
 
         return 0;
     }
@@ -205,7 +217,8 @@ struct vxEnumerateCallback : QueryAcceptCallback {
     vxEnumerateCallback(vx_device_description* desc)
         : _desc(desc) {}
 
-    virtual HRESULT operator ()(const AM_MEDIA_TYPE* pmt)
+    virtual
+    WINAPI HRESULT operator ()(const AM_MEDIA_TYPE* pmt)
     {
         if( pmt->majortype == MEDIATYPE_Video )
         {
@@ -352,7 +365,7 @@ Cleanup:
             DirectShowControl* ds = new DirectShowControl();
 
             ds->Open(conv.mb_str());
-            ds->SetEnumerateCallback(&cb);
+            ds->SetQueryAcceptCallback(&cb);
 
             ds->ConnectComponents();
 

@@ -5,9 +5,9 @@
 static void
 frameCallback(vx_source* so,vx_sink* si, const vx_frame* frame,void* userData)
 {
-	printf("frame #%ld %dx%d stride: %d\n",frame->frame,
+    printf("frame #%ld %dx%d stride: %d bpp:%d\n",frame->frame,
 		   frame->width,frame->height,
-		   frame->stride);
+           frame->stride,frame->bpp);
 }
 
 int main(int argc, char** argv)
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 		for (i = 0; i < 1000; ++i) {
 			vx_source_update(source,VX_SOURCE_UPDATE_PEEK);
 
-//            usleep(1000);
+            usleep(1000);
 		}
 
 		vx_source_set_state(source,VX_SOURCE_STATE_STOP);

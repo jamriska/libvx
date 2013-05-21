@@ -696,7 +696,8 @@ STDAPI CreateMemoryAllocator( IMemAllocator **ppAllocator )
 CaptureFilter::CaptureFilter(AM_MEDIA_TYPE *mt,
         size_t mt_count
         )
-    : _capturepin(NULL)
+    : IBaseFilter()
+    , _capturepin(NULL)
     , _state( State_Stopped )
     , i_ref( 1 )
     , _filtergraph(NULL)
@@ -716,6 +717,8 @@ CaptureFilter::CaptureFilter(AM_MEDIA_TYPE *mt,
 	AM_MEDIA_TYPE *mediatypes = NULL;
 
 	mediatypes = (AM_MEDIA_TYPE *)CoTaskMemAlloc(sizeof(AM_MEDIA_TYPE) * mediatypes_count);
+
+    memset(mediatypes,0,sizeof(AM_MEDIA_TYPE) * mediatypes_count);
 
     mediatypes[0].majortype = MEDIATYPE_Video;
     mediatypes[0].subtype   = MEDIASUBTYPE_NULL;// MEDIASUBTYPE_RGB24;
@@ -885,7 +888,7 @@ STDMETHODIMP CaptureFilter::Run(REFERENCE_TIME tStart)
 		}
 	}
 
-	IPin* pin = CustomGetPin();
+    IPin* pin = GetCapturePin();
 
 	if (pin)
 	{
@@ -959,9 +962,9 @@ STDMETHODIMP CaptureFilter::QueryVendorInfo( LPWSTR* pVendorInfo )
 }
 
 /* Custom methods */
-CapturePin *CaptureFilter::CustomGetPin()
+CapturePin *CaptureFilter::GetCapturePin()
 {
-	SSTT_DS_DEBUG("CaptureFilter::CustomGetPin");
+    SSTT_DS_DEBUG("CaptureFilter::GetCapturePin");
 	return _capturepin;
 }
 
@@ -979,13 +982,30 @@ STDMETHODIMP CaptureFilter::Unregister()
 	return S_OK;
 }
 
-CapturePin::CapturePin(IBaseFilter* capturefilter,
+STDMETHODIMP
+CaptureFilter::SetQueryAcceptCallback(QueryAcceptCallback* cb)
+{
+    _mediatypeCallback = cb;
+
+    return S_OK;
+}
+
+STDMETHODIMP
+CaptureFilter::SetSampleCallback(SampleCallback* cb)
+{
+    _captureCallback = cb;
+
+    return S_OK;
+}
+
+
+CapturePin::CapturePin(CaptureFilter *capturefilter,
                        AM_MEDIA_TYPE *mediatypes,
                        size_t mediatypes_count
                        )
 	: _refcount(1),
 	_connected_pin(NULL),
-	_filter(capturefilter),
+    _captureFilter(capturefilter),
 	_mediatypes(mediatypes),
 	_mediatype_count(mediatypes_count),
     _allocator(NULL)
@@ -1000,6 +1020,7 @@ CapturePin::CapturePin(IBaseFilter* capturefilter,
 	_connected_mediatype.pbFormat  = 0L;
 	_connected_mediatype.cbFormat  = 0L;
 	_connected_mediatype.pUnk      = 0L;
+
 
 }
 
@@ -1050,7 +1071,7 @@ STDMETHODIMP CapturePin::Connect( IPin * pReceivePin, const AM_MEDIA_TYPE *pmt )
 	SSTT_DS_DEBUG("CapturePin::Connect - In");
 
 
-	if (static_cast<CaptureFilter*>(_filter)->_state != State_Stopped)
+    if (static_cast<CaptureFilter*>(_captureFilter)->_state != State_Stopped)
 	{
 		SSTT_DS_DEBUG("CapturePin::Connect - Graph already running");
 		return VFW_E_NOT_STOPPED;
@@ -1166,9 +1187,9 @@ STDMETHODIMP CapturePin::QueryPinInfo( PIN_INFO * pInfo )
 {
 	SSTT_DS_DEBUG("CapturePin::QueryPinInfo - In");
 
-	pInfo->pFilter = _filter;
-	if ( _filter )
-		_filter->AddRef();
+    pInfo->pFilter = _captureFilter;
+    if ( _captureFilter )
+        _captureFilter->AddRef();
 
   //  if (pInfo->achName) 
 		//memcpy(pInfo->achName,L'\0',sizeof(WCHAR));
@@ -1203,8 +1224,8 @@ STDMETHODIMP CapturePin::QueryAccept( const AM_MEDIA_TYPE *pmt )
     SSTT_DS_DEBUG("CapturePin::QueryAccept - In");
 
     // makes the system configurable from outside
-    if (static_cast<CaptureFilter*>(_filter)->_mediatypeCallback) {
-        return (*static_cast<CaptureFilter*>(_filter)->_mediatypeCallback)(pmt);
+    if (_captureFilter->_mediatypeCallback) {
+        return (*_captureFilter->_mediatypeCallback)(pmt);
     }
 
     return S_FALSE;
@@ -1513,18 +1534,14 @@ STDMETHODIMP CapturePin::GetAllocatorRequirements( ALLOCATOR_PROPERTIES *pProps 
 STDMETHODIMP CapturePin::Receive( IMediaSample *pSample )
 {
 
-    if (pSample && static_cast<CaptureFilter*>(_filter)->_captureCallback)
+    HRESULT hr(S_OK);
+
+    if (pSample && _captureFilter && _captureFilter->_captureCallback)
     {
-        pSample->AddRef();
-
-        HRESULT hr = (*static_cast<CaptureFilter*>(_filter)->_captureCallback)(pSample,&_connected_mediatype);
-
-        pSample->Release();
-
-        return hr;
+       hr = (*_captureFilter->_captureCallback)(pSample,&_connected_mediatype);
     }
 
-    return S_OK;
+    return hr;
 
 
 
@@ -1801,6 +1818,8 @@ STDMETHODIMP CaptureEnumMediaTypes::Next( ULONG cMediaTypes,
 		ppMediaTypes[copied] =
 			(AM_MEDIA_TYPE *)CoTaskMemAlloc(sizeof(AM_MEDIA_TYPE));
 
+        memset(ppMediaTypes[copied],0,sizeof(AM_MEDIA_TYPE));
+
 		if( uCopyMediaType( ppMediaTypes[copied],
 			&_pin->_mediatypes[_position-offset]) != S_OK )
 			return E_OUTOFMEMORY;
@@ -1812,7 +1831,8 @@ STDMETHODIMP CaptureEnumMediaTypes::Next( ULONG cMediaTypes,
 	if( pcFetched )  *pcFetched = copied;
 
 	return (copied == cMediaTypes) ? S_OK : S_FALSE;
-};
+}
+
 STDMETHODIMP CaptureEnumMediaTypes::Skip( ULONG cMediaTypes )
 {
 	ULONG max =  _pin->_mediatype_count;
@@ -1920,7 +1940,7 @@ STDMETHODIMP CaptureEnumPins::Next( ULONG cPins, IPin ** ppPins,
 
 	if( i_position < 1 && cPins > 0 )
 	{
-		IPin *pPin = p_filter->CustomGetPin();
+        IPin *pPin = p_filter->GetCapturePin();
 		*ppPins = pPin;
 		pPin->AddRef();
 		i_fetched = 1;
