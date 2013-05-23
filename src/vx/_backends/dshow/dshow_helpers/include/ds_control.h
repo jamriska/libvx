@@ -54,9 +54,9 @@ public:
 
     bool Pause();
 
-    void SetEnumerateCallback(QueryAcceptCallback* cb);
+    void SetQueryAcceptCallback(QueryAcceptCallback* cb);
 
-    void SetCaptureCallback(SampleCallback *cb);
+    void SetSampleCallback(SampleCallback *cb);
 
 	virtual void OnError(const char* error) const;
 

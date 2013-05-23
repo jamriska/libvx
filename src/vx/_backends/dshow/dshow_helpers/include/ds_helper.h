@@ -537,25 +537,26 @@ void WINAPI uFreeMediaType( AM_MEDIA_TYPE& mt )
 UDSHOW_API
 HRESULT WINAPI uCopyMediaType(AM_MEDIA_TYPE *pmtTarget, const AM_MEDIA_TYPE *pmtSource)
 {
-    //  We'll leak if we copy onto one that already exists - there's one
-    //  case we can check like that - copying to itself.
-    //if (pmtSource == pmtTarget) return S_FALSE;
+    if( !pmtSource || !pmtTarget ) return S_FALSE;
 
-    *pmtTarget = *pmtSource;
-    if (pmtSource->cbFormat != 0) {
+   *pmtTarget = *pmtSource;
 
-		//if (pmtSource->pbFormat == NULL) return S_FALSE;
-        
-		pmtTarget->pbFormat = (PBYTE)CoTaskMemAlloc(pmtSource->cbFormat);
-        if (pmtTarget->pbFormat == NULL) {
+    if( pmtSource->cbFormat && pmtSource->pbFormat )
+    {
+        pmtTarget->pbFormat = (PBYTE)CoTaskMemAlloc( pmtSource->cbFormat );
+        if( pmtTarget->pbFormat == NULL )
+        {
             pmtTarget->cbFormat = 0;
             return E_OUTOFMEMORY;
-        } else {
-            CopyMemory((PVOID)pmtTarget->pbFormat, (PVOID)pmtSource->pbFormat,
-                       pmtTarget->cbFormat);
+        }
+        else
+        {
+            CopyMemory( (PVOID)pmtTarget->pbFormat, (PVOID)pmtSource->pbFormat,
+                        pmtTarget->cbFormat );
         }
     }
-    if (pmtTarget->pUnk != NULL) {
+    if( pmtTarget->pUnk != NULL )
+    {
         pmtTarget->pUnk->AddRef();
     }
 
