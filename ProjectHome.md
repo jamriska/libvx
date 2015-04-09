@@ -1,0 +1,1 @@
+Video Extractor is a simple C library for capturing live video data for the purpose of Augmented Reality.
